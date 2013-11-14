@@ -71,6 +71,8 @@ sub html_end {
 	return qq|</body>\n</html\n|;
 }
 
+mkdir 'html' unless -d 'html';
+
 open(my $index, '>:encoding(utf-8)', 'html/index.html');
 print $index html_title('Bibliografija Filozogskog fakulteta');
 
