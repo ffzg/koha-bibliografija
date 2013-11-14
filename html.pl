@@ -12,8 +12,12 @@ use locale;
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
+use XML::LibXML;
+use XML::LibXSLT;
 
 my $dbh = C4::Context->dbh;
+
+my $xslfilename = 'compact.xsl';
 
 my $authors;
 
@@ -71,6 +75,29 @@ sub html_end {
 	return qq|</body>\n</html\n|;
 }
 
+
+my $sth_marcxml = $dbh->prepare(q{
+select marcxml from biblioitems where biblionumber = ?
+});
+
+sub biblioitem_html {
+	my $biblionumber = shift;
+
+	$sth_marcxml->execute( $biblionumber );
+	my $xmlrecord = $sth_marcxml->fetchrow_arrayref->[0];
+
+	my $parser = XML::LibXML->new();
+	$parser->recover_silently(0); # don't die when you find &, >, etc
+    my $source = $parser->parse_string($xmlrecord);
+	my $style_doc = $parser->parse_file($xslfilename);
+
+	my $xslt = XML::LibXSLT->new();
+	my $parsed = $xslt->parse_stylesheet($style_doc);
+	my $transformed = $parsed->transform($source);
+	return $parsed->output_string( $transformed );
+}
+
+
 mkdir 'html' unless -d 'html';
 
 open(my $index, '>:encoding(utf-8)', 'html/index.html');
@@ -93,7 +120,7 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	foreach my $category ( sort keys %{ $authors->{ $row->{authid} } } ) {
 		print $fh qq|<h1>$category</h1>\n<ul>\n|;
 		foreach my $biblionumber ( @{ $authors->{ $row->{authid} }->{$category} } ) {
-			print $fh qq|<li><a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a></li>\n|;
+			print $fh qq|<li><a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|, biblioitem_html($biblionumber), qq|</li>\n|;
 		}
 		print $fh qq|</ul>\n|;
 	}
