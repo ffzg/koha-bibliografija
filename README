@@ -1,0 +1,20 @@
+Use Koha authority data to produce bibliography pages
+
+Most of configuration is currently hard-coded in html.pl, so take a look there.
+
+
+Installation:
+
+1. Modify your koha schema to create index to speed up generation:
+
+	sudo koha-mysql ffzg < biblioitems.sql
+
+2. Map 942$u to agerestricted in your framework in Koha
+
+3. Generate pages with: (you probably want to run this from cron)
+
+	LC_COLLATE=hr_HR.utf8 KOHA_CONF=/etc/koha/sites/ffzg/koha-conf.xml ./html.pl
+
+4. Install generated files with:
+
+	ln -s /srv/koha-bibliografija/html /srv/koha_ffzg/koha-tmpl/bibliografija/
