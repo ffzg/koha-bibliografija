@@ -66,6 +66,7 @@ sub html_title {
 <head>
 <meta charset="UTF-8">
 <title>|, join(" ", @_), qq|</title>
+<link href="style.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
 |;
