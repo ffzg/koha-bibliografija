@@ -61,6 +61,17 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 
 }
 
+my $category_label;
+my $sth_categories = $dbh->prepare(q{
+select authorised_value, lib from authorised_values where category = 'BIBCAT'
+});
+$sth_categories->execute();
+while( my $row = $sth_categories->fetchrow_hashref ) {
+	$category_label->{ $row->{authorised_value} } = $row->{lib};
+
+}
+warn dump( $category_label );
+
 sub html_title {
 	return qq|<html>
 <head>
@@ -119,7 +130,8 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	open(my $fh, '>:encoding(utf-8)', "html/$row->{authid}.html");
 	print $fh html_title($row->{full_name}, "bibliografija");
 	foreach my $category ( sort keys %{ $authors->{ $row->{authid} } } ) {
-		print $fh qq|<h1>$category</h1>\n<ul>\n|;
+ 		my $label = $category_label->{$category} || 'Bez kategorije';
+		print $fh qq|<h1>$label</h1>\n<ul>\n|;
 		foreach my $biblionumber ( @{ $authors->{ $row->{authid} }->{$category} } ) {
 			print $fh qq|<li><a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|, biblioitem_html($biblionumber), qq|</li>\n|;
 		}
