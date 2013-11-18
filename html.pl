@@ -20,13 +20,15 @@ my $dbh = C4::Context->dbh;
 my $xslfilename = 'compact.xsl';
 
 my $authors;
+my $marcxml;
 
 my $sth_select_authors  = $dbh->prepare(q{
 select
 	biblionumber,
 	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="9"]') as first_author,
 	ExtractValue(marcxml,'//datafield[@tag="700"]/subfield[@code="9"]') as other_authors,
-	ExtractValue(marcxml,'//datafield[@tag="942"]/subfield[@code="t"]') as category
+	ExtractValue(marcxml,'//datafield[@tag="942"]/subfield[@code="t"]') as category,
+	marcxml
 from biblioitems
 where
 	agerestriction > 0
@@ -40,6 +42,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	my $all_authors = join(' ', $row->{first_author}, $row->{other_authors});
 	foreach my $authid ( split(/\s+/, $all_authors) ) {
 		push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
+		$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
 	}
 }
 
@@ -92,15 +95,10 @@ sub html_end {
 }
 
 
-my $sth_marcxml = $dbh->prepare(q{
-select marcxml from biblioitems where biblionumber = ?
-});
-
 sub biblioitem_html {
 	my $biblionumber = shift;
 
-	$sth_marcxml->execute( $biblionumber );
-	my $xmlrecord = $sth_marcxml->fetchrow_arrayref->[0];
+	my $xmlrecord = $marcxml->{$biblionumber} || die "missing $biblionumber marcxml";
 
 	my $parser = XML::LibXML->new();
 	$parser->recover_silently(0); # don't die when you find &, >, etc
