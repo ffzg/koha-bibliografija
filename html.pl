@@ -14,6 +14,7 @@ use lib '/srv/koha_ffzg';
 use C4::Context;
 use XML::LibXML;
 use XML::LibXSLT;
+use XML::Simple;
 
 my $dbh = C4::Context->dbh;
 
@@ -39,10 +40,32 @@ order by SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) desc
 $sth_select_authors->execute();
 while( my $row = $sth_select_authors->fetchrow_hashref ) {
 #	warn dump($row),$/;
-	my $all_authors = join(' ', $row->{first_author}, $row->{other_authors});
-	foreach my $authid ( split(/\s+/, $all_authors) ) {
-		push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
-		$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
+	if ( $row->{first_author} ) {
+		my $all_authors = join(' ', $row->{first_author}, $row->{other_authors});
+		foreach my $authid ( split(/\s+/, $all_authors) ) {
+			push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
+			$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
+		}
+	} else {
+		my $xml = XMLin( $row->{marcxml}, ForceArray => [ 'subfield' ] );
+		foreach my $f700 ( map { $_->{subfield} } grep { $_->{tag} eq 700 } @{ $xml->{datafield} } ) {
+			my $authid = 0;
+			my $is_edt = 0;
+			foreach my $sf ( @$f700 ) {
+				if ( $sf->{code} eq '4' && $sf->{content} eq 'edt' ) {
+					$is_edt++;
+				} elsif ( $sf->{code} eq '9' ) {
+					$authid = $sf->{content};
+				}
+			}
+			if ( $authid && $is_edt ) {
+				warn "# ++ ", $row->{biblionumber}, " $authid f700 ", dump( $f700 );
+				push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
+				$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
+			} else {
+				warn "# -- ", $row->{biblionumber}, " f700 ", dump( $f700 );
+			}
+		}
 	}
 }
 
