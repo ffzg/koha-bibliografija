@@ -27,7 +27,11 @@ select
 	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="9"]') as first_author,
 	ExtractValue(marcxml,'//datafield[@tag="700"]/subfield[@code="9"]') as other_authors,
 	ExtractValue(marcxml,'//datafield[@tag="942"]/subfield[@code="t"]') as category
-from biblioitems where agerestriction > 0
+from biblioitems
+where
+	agerestriction > 0
+	and SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) between 2008 and 2013
+order by SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) desc
 });
 
 $sth_select_authors->execute();
