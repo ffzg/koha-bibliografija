@@ -291,9 +291,7 @@
 
 		<br/>
         <xsl:call-template name="showAuthor"><xsl:with-param name="authorfield" select="marc:datafield[@tag=100 or @tag=110 or @tag=111]"/><xsl:with-param name="UseAuthoritiesForTracings" select="$UseAuthoritiesForTracings"/></xsl:call-template>
-		<xsl:if test="marc:datafield[@tag=942]/marc:subfield[@code='c'] != 'KNJ'">
-			<xsl:call-template name="showAuthor"><xsl:with-param name="authorfield" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/><xsl:with-param name="UseAuthoritiesForTracings" select="$UseAuthoritiesForTracings"/></xsl:call-template>
-		</xsl:if>
+		<xsl:call-template name="showAuthor"><xsl:with-param name="authorfield" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/><xsl:with-param name="UseAuthoritiesForTracings" select="$UseAuthoritiesForTracings"/></xsl:call-template>
 		<br/>	
 		<span class="results_summary">
         <xsl:if test="marc:datafield[@tag=245]">
