@@ -17,4 +17,4 @@ Installation:
 
 4. Install generated files with:
 
-	ln -s /srv/koha-bibliografija/html /srv/koha_ffzg/koha-tmpl/bibliografija/
+	ln -s /srv/koha-bibliografija/html /srv/koha_ffzg/koha-tmpl/bibliografija
