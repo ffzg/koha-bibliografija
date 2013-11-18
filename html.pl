@@ -52,7 +52,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 			my $authid = 0;
 			my $is_edt = 0;
 			foreach my $sf ( @$f700 ) {
-				if ( $sf->{code} eq '4' && $sf->{content} eq 'edt' ) {
+				if ( $sf->{code} eq '4' && $sf->{content} =~ m/^edt/ ) {
 					$is_edt++;
 				} elsif ( $sf->{code} eq '9' ) {
 					$authid = $sf->{content};
