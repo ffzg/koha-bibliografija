@@ -2,6 +2,10 @@ li {
 	margin-top: 10px;
 }
 
+li a {
+	color: #707070;
+}
+
 .crosbi {
 	font-size: 80%;
 	color: #707070;
