@@ -138,7 +138,7 @@ sub biblioitem_html {
 
 mkdir 'html' unless -d 'html';
 
-open(my $index, '>:encoding(utf-8)', 'html/index.html');
+open(my $index, '>:encoding(utf-8)', 'html/index.new');
 print $index html_title('Bibliografija Filozogskog fakulteta');
 
 my $first_letter = '';
@@ -153,7 +153,8 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	}
 	print $index qq{<li><a href="}, $row->{authid}, qq{.html">}, $row->{full_name}, "</a></li>\n";
 
-	open(my $fh, '>:encoding(utf-8)', "html/$row->{authid}.html");
+	my $path = "html/$row->{authid}";
+	open(my $fh, '>:encoding(utf-8)', "$path.new");
 	print $fh html_title($row->{full_name}, "bibliografija");
 	foreach my $category ( sort keys %{ $authors->{ $row->{authid} } } ) {
  		my $label = $category_label->{$category} || 'Bez kategorije';
@@ -165,10 +166,13 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	}
 	print $fh html_end;
 	close($fh);
+	rename "$path.new", "$path.html";
 
 }
 
 print $index html_end;
+close($index);
+rename 'html/index.new', 'html/index.html';
 
 #print dump( $authors );
 
