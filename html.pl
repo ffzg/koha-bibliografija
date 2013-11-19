@@ -29,6 +29,7 @@ select
 	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="9"]') as first_author,
 	ExtractValue(marcxml,'//datafield[@tag="700"]/subfield[@code="9"]') as other_authors,
 	ExtractValue(marcxml,'//datafield[@tag="942"]/subfield[@code="t"]') as category,
+	itemtype,
 	marcxml
 from biblioitems
 where
@@ -40,7 +41,7 @@ order by SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) desc
 $sth_select_authors->execute();
 while( my $row = $sth_select_authors->fetchrow_hashref ) {
 #	warn dump($row),$/;
-	if ( $row->{first_author} ) {
+	if ( $row->{first_author} || $row->{itemtype} !~ m/^KNJ/ ) {
 		my $all_authors = join(' ', $row->{first_author}, $row->{other_authors});
 		foreach my $authid ( split(/\s+/, $all_authors) ) {
 			push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
