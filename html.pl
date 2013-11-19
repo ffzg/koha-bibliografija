@@ -60,11 +60,11 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 				}
 			}
 			if ( $authid && $is_edt ) {
-				warn "# ++ ", $row->{biblionumber}, " $authid f700 ", dump( $f700 );
+#				warn "# ++ ", $row->{biblionumber}, " $authid f700 ", dump( $f700 );
 				push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
 				$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
 			} else {
-				warn "# -- ", $row->{biblionumber}, " f700 ", dump( $f700 );
+#				warn "# -- ", $row->{biblionumber}, " f700 ", dump( $f700 );
 			}
 		}
 	}
@@ -86,7 +86,7 @@ where
 
 $sth_auth->execute();
 while( my $row = $sth_auth->fetchrow_hashref ) {
-	warn dump( $row );
+#	warn dump( $row );
 	$auth_header->{ $row->{authid} } = $row->{full_name};
 	push @authors, $row;
 
@@ -101,7 +101,7 @@ while( my $row = $sth_categories->fetchrow_hashref ) {
 	$category_label->{ $row->{authorised_value} } = $row->{lib};
 
 }
-warn dump( $category_label );
+#warn dump( $category_label );
 
 sub html_title {
 	return qq|<html>
@@ -170,9 +170,9 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
 print $index html_end;
 
-print dump( $authors );
+#print dump( $authors );
 
-print dump( $auth_header );
+#print dump( $auth_header );
 
 
 
