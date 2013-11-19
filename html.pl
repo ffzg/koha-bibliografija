@@ -141,7 +141,7 @@ mkdir 'html' unless -d 'html';
 open(my $index, '>:encoding(utf-8)', 'html/index.html');
 print $index html_title('Bibliografija Filozogskog fakulteta');
 
-my $first_letter;
+my $first_letter = '';
 
 foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
