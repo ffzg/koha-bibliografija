@@ -89,7 +89,7 @@ where
 $sth_auth->execute();
 while( my $row = $sth_auth->fetchrow_hashref ) {
 	$auth_header->{ $row->{authid} } = $row->{full_name};
-	$row->{department} =~ s/, Filozofski fakultet u Zagrebu\s*//;
+	$row->{department} =~ s/, Filozofski fakultet u Zagrebu\s*// || next;
 	$row->{department} =~ s/^.+\.\s*//;
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	warn dump( $row );
