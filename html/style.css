@@ -12,6 +12,10 @@ li a {
 	color: #707070;
 }
 
+.title {
+	font-weight: bold;
+}
+
 .crosbi {
 	font-size: 80%;
 	color: #707070;

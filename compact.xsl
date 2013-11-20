@@ -295,9 +295,10 @@
 		<br/>	
 		<span class="results_summary">
         <xsl:if test="marc:datafield[@tag=245]">
+		<span class="title">
         <xsl:for-each select="marc:datafield[@tag=245]">
             <xsl:variable name="title">
-                     <xsl:call-template name="subfieldSelect">
+                    <xsl:call-template name="subfieldSelect">
                         <xsl:with-param name="codes">a</xsl:with-param>
                     </xsl:call-template>
                     <xsl:if test="marc:subfield[@code='b']">
@@ -338,6 +339,7 @@
             </xsl:variable>
             <xsl:value-of select="$title"/>
         </xsl:for-each>
+		</span>
         </xsl:if>
 	</span>
 
