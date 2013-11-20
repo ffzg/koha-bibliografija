@@ -160,7 +160,11 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
  		my $label = $category_label->{$category} || 'Bez kategorije';
 		print $fh qq|<h1>$label</h1>\n<ul>\n|;
 		foreach my $biblionumber ( @{ $authors->{ $row->{authid} }->{$category} } ) {
-			print $fh qq|<li><a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|, biblioitem_html($biblionumber), qq|</li>\n|;
+			print $fh qq|<li>|,
+				biblioitem_html($biblionumber),
+				qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
+				qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
+				qq|</li>\n|;
 		}
 		print $fh qq|</ul>\n|;
 	}
