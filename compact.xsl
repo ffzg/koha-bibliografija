@@ -758,14 +758,35 @@
 
     <xsl:if test="marc:datafield[@tag=773]">
         <xsl:for-each select="marc:datafield[@tag=773]">
+            <xsl:if test="marc:subfield[@code='n']">
+				<xsl:text>U: </xsl:text>
+            	<xsl:value-of select="marc:subfield[@code='n']"/>
+				<xsl:text> (ur.). </xsl:text>
+            </xsl:if>
             <xsl:if test="marc:subfield[@code='t']">
     			<span style="font-style: italic">
             	<xsl:value-of select="marc:subfield[@code='t']"/>
 				</span>
             </xsl:if>
+            <xsl:if test="marc:subfield[@code='d']">
+				<xsl:text>. </xsl:text>
+            	<xsl:value-of select="marc:subfield[@code='d']"/>
+            </xsl:if>
+            <xsl:if test="marc:subfield[@code='k']">
+				<xsl:text> (</xsl:text>
+            	<xsl:value-of select="marc:subfield[@code='k']"/>
+				<xsl:text>)</xsl:text>
+            </xsl:if>
             <xsl:if test="marc:subfield[@code='g']">
 				<xsl:text>, </xsl:text>
             	<xsl:value-of select="marc:subfield[@code='g']"/>
+				<xsl:text>.</xsl:text>
+            </xsl:if>
+            <xsl:if test="marc:subfield[@code='a']">
+				<br/>
+				<xsl:text>[Naziv skupa: </xsl:text>
+            	<xsl:value-of select="marc:subfield[@code='a']"/>
+				<xsl:text>]</xsl:text>
             </xsl:if>
         </xsl:for-each>
     </xsl:if>
@@ -971,7 +992,6 @@
           <xsl:when test="@tag=110 or @tag=710"><xsl:call-template name="nameABCDN"/></xsl:when>
           <xsl:when test="@tag=111 or @tag=711"><xsl:call-template name="nameACDEQ"/></xsl:when>
 	</xsl:choose>
-	<!-- add relator code too between brackets
 	<xsl:if test="marc:subfield[@code='4' or @code='e']">
       <span class="relatorcode">
       <xsl:text> [</xsl:text>
@@ -982,7 +1002,6 @@
 	  <xsl:text>]</xsl:text>
       </span>
 	</xsl:if>
-	-->
         <xsl:choose>
           <xsl:when test="position()=last()">; <xsl:text></xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise>
         </xsl:choose>
