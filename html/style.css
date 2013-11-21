@@ -1,8 +1,14 @@
-h1 {
+h1, h2 {
 	font-family: Trebuchet MS, sans-serif;
 	font-weight: normal;
-	font-size: 120%;
 	color: #336699;
+}
+h1 {
+	font-size: 140%;
+}
+
+h2 {
+	font-size: 120%;
 }
 
 li {

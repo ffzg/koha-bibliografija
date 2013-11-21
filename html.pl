@@ -164,9 +164,10 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	my $path = "html/$row->{authid}";
 	open(my $fh, '>:encoding(utf-8)', "$path.new");
 	print $fh html_title($row->{full_name}, "bibliografija");
+	print $fh qq|<h1>$row->{full_name} - bibliografija za razdoblje 2008-2013</h1>|;
 	foreach my $category ( sort keys %{ $authors->{ $row->{authid} } } ) {
  		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<h1>$label</h1>\n<ul>\n|;
+		print $fh qq|<h2>$label</h2>\n<ul>\n|;
 		foreach my $biblionumber ( @{ $authors->{ $row->{authid} }->{$category} } ) {
 			print $fh qq|<li>|,
 				qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
