@@ -290,8 +290,21 @@
         </xsl:if>
 
 		<br/>
-        <xsl:call-template name="showAuthor"><xsl:with-param name="authorfield" select="marc:datafield[@tag=100 or @tag=110 or @tag=111]"/><xsl:with-param name="UseAuthoritiesForTracings" select="$UseAuthoritiesForTracings"/></xsl:call-template>
-		<xsl:call-template name="showAuthor"><xsl:with-param name="authorfield" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/><xsl:with-param name="UseAuthoritiesForTracings" select="$UseAuthoritiesForTracings"/></xsl:call-template>
+        <xsl:call-template name="showAuthor100">
+			<xsl:with-param name="authorfield100" select="marc:datafield[@tag=100 or @tag=110 or @tag=111]"/>
+		</xsl:call-template>
+		<xsl:choose>
+		<xsl:when test="marc:datafield[@tag=942]/marc:subfield[@code='c'] != 'KNJ' or marc:datafield[@tag=100]/marc:subfield[@code='a']">
+				<xsl:call-template name="showAuthor700">
+					<xsl:with-param name="authorfield700" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/>
+				</xsl:call-template>
+		</xsl:when>
+		<xsl:otherwise>
+				<xsl:call-template name="showAuthor700k">
+					<xsl:with-param name="authorfield700k" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/>
+				</xsl:call-template>
+		</xsl:otherwise>
+		</xsl:choose>
 		<br/>	
 		<span class="results_summary">
         <xsl:if test="marc:datafield[@tag=245]">
@@ -363,7 +376,6 @@
 
     <xsl:if test="marc:datafield[@tag=250]">
     <span class="results_summary edition">
-    <span class="label">Edition: </span>
             <xsl:for-each select="marc:datafield[@tag=250]">
                     <xsl:call-template name="subfieldSelect">
                         <xsl:with-param name="codes">ab</xsl:with-param>
@@ -740,7 +752,7 @@
 </xsl:if> <!-- DisplayIconsXSLT -->
 
     <xsl:if test="marc:datafield[@tag=020] and marc:datafield[@tag=942]/marc:subfield[@code='c'] ='KNJ'">
-    <span class="results_summary isbn"><span class="label">ISBN: </span>
+    <span class="results_summary isbn"><span class="label"> ISBN: </span>
     <xsl:for-each select="marc:datafield[@tag=020]">
     <xsl:variable name="isbn" select="marc:subfield[@code='a']"/>
             <xsl:value-of select="marc:subfield[@code='a']"/>
@@ -750,7 +762,7 @@
     </xsl:if>
 
     <xsl:if test="marc:datafield[@tag=022] and (marc:datafield[@tag=942]/marc:subfield[@code='c'] ='KNJ' or marc:datafield[@tag=942]/marc:subfield[@code='c'] ='PER')">
-    <span class="results_summary issn"><span class="label">ISSN: </span>
+    <span class="results_summary issn"><span class="label"> ISSN: </span>
     <xsl:for-each select="marc:datafield[@tag=022]">
             <xsl:value-of select="marc:subfield[@code='a']"/>
             <xsl:choose><xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
@@ -886,7 +898,7 @@
         </xsl:for-each>
         <xsl:if test="marc:subfield[@code='c'] or marc:subfield[@code='d'] or marc:subfield[@code='n']">
                 <xsl:call-template name="subfieldSelect">
-                    <xsl:with-param name="codes">cdn</xsl:with-param>
+                    <xsl:with-param name="codes">dn</xsl:with-param>
                 </xsl:call-template>
         </xsl:if>
     </xsl:template>
@@ -971,30 +983,18 @@
         </xsl:if>
     </xsl:template>
 
-    <xsl:template name="showAuthor">
-	<xsl:param name="authorfield"/>
-    <xsl:param name="UseAuthoritiesForTracings"/>
-	<xsl:if test="count($authorfield)&gt;0">
+    <xsl:template name="showAuthor100">
+	<xsl:param name="authorfield100"/>
+	<xsl:if test="count($authorfield100)&gt;0">
         <span class="results_summary author">
-        <xsl:for-each select="$authorfield">
-	<!--
-        <xsl:choose>
-          <xsl:when test="position()&gt;1"/>
-          <xsl:when test="@tag&lt;700">Author(s): </xsl:when>
-          <xsl:otherwise>Additional author(s): </xsl:otherwise>
-        </xsl:choose>
-	-->
+        <xsl:for-each select="$authorfield100">
 	<xsl:choose>
-          <xsl:when test="(@tag=100 or @tag=700) and marc:subfield[@code=9]">
+          <xsl:when test="(@tag=100) and marc:subfield[@code=9]">
 		 		<span style="color: green"><xsl:call-template name="nameABCDQ"/></span>
 		  </xsl:when>
 		  <xsl:otherwise><xsl:call-template name="nameABCDQ"/></xsl:otherwise>
     </xsl:choose>
-	<xsl:choose>
-          <xsl:when test="@tag=110 or @tag=710"><xsl:call-template name="nameABCDN"/></xsl:when>
-          <xsl:when test="@tag=111 or @tag=711"><xsl:call-template name="nameACDEQ"/></xsl:when>
-	</xsl:choose>
-	<xsl:if test="marc:subfield[@code='4' or @code='e']">
+	<xsl:if test="marc:subfield[@code='4' or @code='e'] != 'aut'">
       <span class="relatorcode">
       <xsl:text> [</xsl:text>
 	  <xsl:choose>
@@ -1004,9 +1004,66 @@
 	  <xsl:text>]</xsl:text>
       </span>
 	</xsl:if>
-        <xsl:choose>
-          <xsl:when test="position()=last()">; <xsl:text></xsl:text></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise>
-        </xsl:choose>
+        <xsl:text> ; </xsl:text>
+        </xsl:for-each>
+        </span>
+        </xsl:if>
+    </xsl:template>
+    
+	<xsl:template name="showAuthor700">
+	<xsl:param name="authorfield700"/>
+	<xsl:if test="count($authorfield700)&gt;0">
+        <span class="results_summary author">
+        <xsl:for-each select="$authorfield700">
+	<xsl:choose>
+          <xsl:when test="(@tag=700) and marc:subfield[@code=9]">
+		 		<span style="color: green"><xsl:call-template name="nameABCDQ"/></span>
+		  </xsl:when>
+		  <xsl:otherwise><xsl:call-template name="nameABCDQ"/></xsl:otherwise>
+    </xsl:choose>
+	<xsl:if test="marc:subfield[@code='4' or @code='e'] != 'aut'">
+      <span class="relatorcode">
+      <xsl:text> [</xsl:text>
+	  <xsl:choose>
+	    <xsl:when test="marc:subfield[@code=4]"><xsl:value-of select="marc:subfield[@code=4]"/></xsl:when>
+	    <xsl:otherwise><xsl:value-of select="marc:subfield[@code='e']"/></xsl:otherwise>
+	  </xsl:choose>
+	  <xsl:text>]</xsl:text>
+      </span>
+	</xsl:if>
+        	<xsl:text> ; </xsl:text>
+        </xsl:for-each>
+        </span>
+        </xsl:if>
+    </xsl:template>
+	
+	<xsl:template name="showAuthor700k">
+	<xsl:param name="authorfield700k"/>
+	<xsl:if test="count($authorfield700k)&gt;0">
+        <span class="results_summary author">
+        <xsl:for-each select="$authorfield700k">
+	<xsl:if test="marc:subfield[@code='4' or @code='e'] != 'aut'">
+	<xsl:choose>
+          <xsl:when test="(@tag=700) and marc:subfield[@code=9]">
+		 		<span style="color: green"><xsl:call-template name="nameABCDQ"/></span>
+        		<xsl:text> ; </xsl:text>
+		  </xsl:when>
+		  <xsl:otherwise>
+		  	<xsl:call-template name="nameABCDQ"/>
+        	<xsl:text> ; </xsl:text>
+		  </xsl:otherwise>
+    </xsl:choose>
+	</xsl:if>
+	<xsl:if test="marc:subfield[@code='4' or @code='e'] != 'aut'">
+      <span class="relatorcode">
+      <xsl:text> [</xsl:text>
+	  <xsl:choose>
+	    <xsl:when test="marc:subfield[@code=4]"><xsl:value-of select="marc:subfield[@code=4]"/></xsl:when>
+	    <xsl:otherwise><xsl:value-of select="marc:subfield[@code='e']"/></xsl:otherwise>
+	  </xsl:choose>
+	  <xsl:text>]</xsl:text>
+      </span>
+	</xsl:if>
         </xsl:for-each>
         </span>
         </xsl:if>
