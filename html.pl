@@ -92,7 +92,7 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 	$row->{department} =~ s/, Filozofski fakultet u Zagrebu\s*// || next;
 	$row->{department} =~ s/^.+\.\s*//;
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
-	warn dump( $row );
+#	warn dump( $row );
 	push @authors, $row;
 
 }
@@ -188,9 +188,9 @@ rename 'html/index.new', 'html/index.html';
 
 #print dump( $authors );
 
-print dump( $auth_header );
+#print dump( $auth_header );
 
-print dump( $auth_department );
+#print dump( $auth_department );
 
 
 my $department_category_author;
@@ -202,7 +202,7 @@ foreach my $department ( sort keys %$auth_department ) {
 	}
 }
 
-print dump( $department_category_author );
+#print dump( $department_category_author );
 
 mkdir 'html/departments' unless -d 'html/departments';
 
