@@ -147,7 +147,7 @@ sub biblioitem_html {
 mkdir 'html' unless -d 'html';
 
 open(my $index, '>:encoding(utf-8)', 'html/index.new');
-print $index html_title('Bibliografija Filozogskog fakulteta');
+print $index html_title('Bibliografija Filozofskog fakulteta');
 
 my $first_letter = '';
 
