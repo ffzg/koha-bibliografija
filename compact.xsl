@@ -291,17 +291,17 @@
 
 		<br/>
         <xsl:call-template name="showAuthor100">
-			<xsl:with-param name="authorfield100" select="marc:datafield[@tag=100 or @tag=110 or @tag=111]"/>
+			<xsl:with-param name="authorfield100" select="marc:datafield[@tag=100]"/>
 		</xsl:call-template>
 		<xsl:choose>
 		<xsl:when test="marc:datafield[@tag=942]/marc:subfield[@code='c'] != 'KNJ' or marc:datafield[@tag=100]/marc:subfield[@code='a']">
 				<xsl:call-template name="showAuthor700">
-					<xsl:with-param name="authorfield700" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/>
+					<xsl:with-param name="authorfield700" select="marc:datafield[@tag=700]"/>
 				</xsl:call-template>
 		</xsl:when>
 		<xsl:otherwise>
 				<xsl:call-template name="showAuthor700k">
-					<xsl:with-param name="authorfield700k" select="marc:datafield[@tag=700 or @tag=710 or @tag=711]"/>
+					<xsl:with-param name="authorfield700k" select="marc:datafield[@tag=700]"/>
 				</xsl:call-template>
 		</xsl:otherwise>
 		</xsl:choose>
