@@ -125,6 +125,12 @@ sub html_end {
 
 my $biblio_html;
 
+my $parser = XML::LibXML->new();
+$parser->recover_silently(0); # don't die when you find &, >, etc
+my $style_doc = $parser->parse_file($xslfilename);
+my $xslt = XML::LibXSLT->new();
+my $parsed = $xslt->parse_stylesheet($style_doc);
+
 sub biblioitem_html {
 	my $biblionumber = shift;
 
@@ -132,13 +138,8 @@ sub biblioitem_html {
 
 	my $xmlrecord = $marcxml->{$biblionumber} || die "missing $biblionumber marcxml";
 
-	my $parser = XML::LibXML->new();
-	$parser->recover_silently(0); # don't die when you find &, >, etc
-    my $source = $parser->parse_string($xmlrecord);
-	my $style_doc = $parser->parse_file($xslfilename);
+	my $source = $parser->parse_string($xmlrecord);
 
-	my $xslt = XML::LibXSLT->new();
-	my $parsed = $xslt->parse_stylesheet($style_doc);
 	my $transformed = $parsed->transform($source);
 	return $biblio_html->{$biblionumber} = $parsed->output_string( $transformed );
 }
