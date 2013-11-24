@@ -10,6 +10,7 @@ use Data::Dump qw(dump);
 use autodie;
 use locale;
 use Text::Unaccent;
+use Carp qw(confess);
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
@@ -93,7 +94,7 @@ sub biblioitem_html {
 
 	return $biblio_html->{$biblionumber} if exists $biblio_html->{$biblionumber};
 
-	my $xmlrecord = $marcxml->{$biblionumber} || die "missing $biblionumber marcxml";
+	my $xmlrecord = $marcxml->{$biblionumber} || confess "missing $biblionumber marcxml";
 
 	print $xml_fh $xmlrecord if $ENV{XML};
 
@@ -200,6 +201,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 				if ( $type =~ m/(edt|trl|com|ctb)/ ) {
 					push @{ $authors->{$authid}->{sec}->{ $category } }, $row->{biblionumber};
+					push @{ $authors->{$authid}->{$1}->{ $category } }, $row->{biblionumber};
 				} elsif ( $type =~ m/aut/ ) {
 					if ( ! $have_100 ) {
 						$have_edt = grep { exists $_->{4} && $_->{4} =~ m/edt/ } @{ $data->{700} } if ! defined $have_edt;
@@ -259,6 +261,15 @@ my $first_letter = '';
 
 debug 'authors' => \@authors;
 
+sub li_biblio {
+	my ($biblionumber) = @_;
+	return qq|<li>|,
+		qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
+		biblioitem_html($biblionumber),
+		qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
+		qq|</li>\n|;
+}
+
 sub author_html {
 	my ( $fh, $authid, $type, $label ) = @_;
 
@@ -270,11 +281,7 @@ sub author_html {
 		my $label = $category_label->{$category} || 'Bez kategorije';
 		print $fh qq|<h3>$label</h3>\n<ul>\n|;
 		foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
-			print $fh qq|<li>|,
-				qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
-				biblioitem_html($biblionumber),
-				qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
-				qq|</li>\n|;
+			print $fh li_biblio( $biblionumber );
 		}
 		print $fh qq|</ul>\n|;
 	}
@@ -314,7 +321,9 @@ debug 'auth_header' => $auth_header;
 my $department_category_author;
 foreach my $department ( sort keys %$auth_department ) {
 	foreach my $authid ( sort @{ $auth_department->{$department} } ) {
-		foreach my $category ( sort keys %{ $authors->{$authid} } ) {
+		my   @categories = keys %{ $authors->{$authid}->{aut} };
+		push @categories,  keys %{ $authors->{$authid}->{sec} };
+		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
 		}
 	}
@@ -331,23 +340,50 @@ foreach my $department ( sort keys %$department_category_author ) {
 	my $dep_file = unac_string('utf-8',$dep);
 	print $dep_fh qq|<li><a href="$dep_file.html">$dep</a></li>\n|;
 	open(my $fh, '>:encoding(utf-8)', "html/departments/$dep_file.new");
-	print $fh html_title($department . ' bibliografija');
-	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
- 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<h1>$label</h1>\n<ul>\n|;
 
-		foreach my $authid ( @{ $department_category_author->{$department}->{$category} } ) {
-			foreach my $biblionumber ( @{ $authors->{$authid}->{$category} } ) {
-				print $fh qq|<li>|,
-					qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
-					biblioitem_html($biblionumber),
-					qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
-					qq|</li>\n|;
-			}
-		}
+	print $fh html_title($department . ' bibliografija');
+	print $fh qq|<h1>$department bibliografija</h1>\n|;
+
+	print $fh qq|<h2>Primarno autorstvo</h2>\n|;
+
+	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
+
+		my @authids = @{ $department_category_author->{$department}->{$category} };
+		next unless @authids;
+
+		my @biblionumber = map { @{ $authors->{$_}->{aut}->{$category} } } grep { exists $authors->{$_}->{aut}->{$category} } @authids;
+
+		next unless @biblionumber;
+
+ 		my $label = $category_label->{$category} || 'Bez kategorije';
+		print $fh qq|<h3>$label</h3>\n<ul>\n|;
+
+		print $fh li_biblio( $_ ) foreach @biblionumber;
 
 		print $fh qq|</ul>|;
 	}
+
+
+	print $fh qq|<h2>Sekundarno autorstvo</h2>\n|;
+
+	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
+
+		my @authids = @{ $department_category_author->{$department}->{$category} };
+		next unless @authids;
+
+		my @biblionumber = map { @{ $authors->{$_}->{sec}->{$category} } } grep { exists $authors->{$_}->{sec}->{$category} } @authids;
+
+		next unless @biblionumber;
+
+ 		my $label = $category_label->{$category} || 'Bez kategorije';
+		print $fh qq|<h3>$label</h3>\n<ul>\n|;
+
+		print $fh li_biblio( $_ ) foreach @biblionumber;
+
+		print $fh qq|</ul>|;
+	}
+
+
 	print $fh html_end;
 	close($fh);
 	rename "html/departments/$dep_file.new", "html/departments/$dep_file.html";
