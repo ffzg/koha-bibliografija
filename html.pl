@@ -246,6 +246,8 @@ debug 'authors' => \@authors;
 sub author_html {
 	my ( $fh, $authid, $type, $label ) = @_;
 
+	return unless exists $authors->{$authid}->{$type};
+
 	print $fh qq|<h2>$label</h2>\n|;
 
 	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
