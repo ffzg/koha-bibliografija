@@ -392,3 +392,27 @@ print $dep_fh qq|</ul>\n|, html_end;
 close($dep_fh);
 rename 'html/departments/index.new', 'html/departments/index.html';
 
+my $azvo_stat;
+
+foreach my $department ( sort keys %$department_category_author ) {
+	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
+		foreach my $authid ( @{ $department_category_author->{$department}->{$category} } ) {
+			foreach my $type ( keys %{ $authors->{$authid} } ) {
+				next unless exists $authors->{$authid}->{$type}->{$category};
+				$azvo_stat->{ $department }->{ $category }->{ $type } += $#{ $authors->{$authid}->{$type}->{$category} } + 1;
+			}
+		}
+	}
+}
+
+debug 'azvo_stat' => $azvo_stat;
+
+=for later
+open(my $fh, '>', 'html/azvo.new');
+
+
+
+close($fh);
+rename 'html/azvo.new', 'html/azvo.html';
+=cut
+
