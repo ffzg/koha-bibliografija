@@ -77,6 +77,7 @@ where
 =cut
 
 my $biblio_year;
+my $type_stats;
 
 my $parser = XML::LibXML->new();
 $parser->recover_silently(0); # don't die when you find &, >, etc
@@ -190,7 +191,9 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 			foreach my $auth ( @{ $data->{700} } ) {
 				my $authid = $auth->{9} || next;
 				my $type   = $auth->{4} || next; #die "no 4 in ",dump($data);
-			
+
+				$type_stats->{$type}++;
+
 				push @{ $authors->{$authid}->{ $category } }, $row->{biblionumber};
 				if ( $type =~ m/aut/ ) {
 					$author_count->{aut}->{ $authid }++;
@@ -207,6 +210,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 debug 'authors' => $authors;
 debug 'author_count' => $author_count;
+debug 'type_stats' => $type_stats;
 
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
