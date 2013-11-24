@@ -126,7 +126,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 	my ( undef, $doc ) = biblioitem_html( $row->{biblionumber} );
 	if ( ! $doc ) {
-		warn "ERROR can't parse MARCXML ", $row->{biblionumber}, " ", $row->{marcxml}, "\n";
+#		warn "ERROR can't parse MARCXML ", $row->{biblionumber}, " ", $row->{marcxml}, "\n";
 		next;
 	}
 
