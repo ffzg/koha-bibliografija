@@ -178,12 +178,18 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	}
 
 
+	my $have_100 = 1;
+
 	if ( exists $data->{100} ) {
 			my @first_author = map { $_->{'9'} } @{ $data->{100} };
 			foreach my $authid ( @first_author ) {
 				push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
 			}
+	} else {
+		$have_100 = 0;
 	}
+
+	my $have_edt;
 
 	if ( exists $data->{700} ) {
 			foreach my $auth ( @{ $data->{700} } ) {
@@ -192,13 +198,22 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 				$type_stats->{$type}++;
 
-				if ( $type =~ m/aut/ ) {
-					push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
-				} elsif ( $type =~ m/(edt|trl|com|ctb)/ ) {
+				if ( $type =~ m/(edt|trl|com|ctb)/ ) {
 					push @{ $authors->{$authid}->{sec}->{ $category } }, $row->{biblionumber};
+				} elsif ( $type =~ m/aut/ ) {
+					if ( ! $have_100 ) {
+						$have_edt = grep { exists $_->{4} && $_->{4} =~ m/edt/ } @{ $data->{700} } if ! defined $have_edt;
+						if ( $have_edt ) {
+							$skip->{ have_700_edt }->{ $row->{biblionumber} }++;
+						} else {
+							push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
+						}
+					} else {
+						push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
+					}
 				} else {
 #					warn "# SKIP ", $row->{biblionumber}, ' no 700$4 in ', dump($data);
-					push @{ $skip->{ 'no_700$4' } }, $row->{biblionumber};
+					$skip->{ 'no_700$4' }->{ $row->{biblionumber} }++;
 				}
 			}
 	}
@@ -207,6 +222,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 debug 'authors' => $authors;
 debug 'type_stats' => $type_stats;
+debug 'skip' => $skip;
 
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
@@ -339,6 +355,4 @@ foreach my $department ( sort keys %$department_category_author ) {
 print $dep_fh qq|</ul>\n|, html_end;
 close($dep_fh);
 rename 'html/departments/index.new', 'html/departments/index.html';
-
-debug 'skip' => $skip;
 
