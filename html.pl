@@ -54,7 +54,6 @@ debug 'auth_department' => $auth_department;
 
 
 my $authors;
-my $author_count;
 my $marcxml;
 
 my $sth_select_authors  = $dbh->prepare(q{
@@ -100,7 +99,7 @@ sub biblioitem_html {
 
 	my $source = eval { $parser->parse_string($xmlrecord) };
 	if ( $@ ) {
-		warn "SKIP $biblionumber corrupt XML";
+#		warn "SKIP $biblionumber corrupt XML";
 		push @{ $skip->{XML_corrupt} }, $biblionumber;
 		return;
 	}
@@ -173,7 +172,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 	my $category = $data->{942}->[0]->{'t'};
 	if ( ! $category ) {
-		warn "# SKIP ", $row->{biblionumber}, " no category in ", dump($data);
+#		warn "# SKIP ", $row->{biblionumber}, " no category in ", dump($data);
 		push @{ $skip->{no_category} }, $row->{biblionumber};
 		next;
 	}
@@ -182,8 +181,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	if ( exists $data->{100} ) {
 			my @first_author = map { $_->{'9'} } @{ $data->{100} };
 			foreach my $authid ( @first_author ) {
-				push @{ $authors->{$authid}->{ $category } }, $row->{biblionumber};
-				$author_count->{aut}->{$authid}++;
+				push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
 			}
 	}
 
@@ -194,13 +192,12 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 				$type_stats->{$type}++;
 
-				push @{ $authors->{$authid}->{ $category } }, $row->{biblionumber};
 				if ( $type =~ m/aut/ ) {
-					$author_count->{aut}->{ $authid }++;
-				} elsif ( $type =~ m/(edt|tr)/ ) {
-					$author_count->{$1}->{ $authid }++;
+					push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
+				} elsif ( $type =~ m/(edt|trl|com|ctb)/ ) {
+					push @{ $authors->{$authid}->{sec}->{ $category } }, $row->{biblionumber};
 				} else {
-					warn "# SKIP ", $row->{biblionumber}, ' no 700$4 in ', dump($data);
+#					warn "# SKIP ", $row->{biblionumber}, ' no 700$4 in ', dump($data);
 					push @{ $skip->{ 'no_700$4' } }, $row->{biblionumber};
 				}
 			}
@@ -209,7 +206,6 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 }
 
 debug 'authors' => $authors;
-debug 'author_count' => $author_count;
 debug 'type_stats' => $type_stats;
 
 my $category_label;
@@ -247,6 +243,25 @@ my $first_letter = '';
 
 debug 'authors' => \@authors;
 
+sub author_html {
+	my ( $fh, $authid, $type, $label ) = @_;
+
+	print $fh qq|<h2>$label</h2>\n|;
+
+	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
+		my $label = $category_label->{$category} || 'Bez kategorije';
+		print $fh qq|<h3>$label</h3>\n<ul>\n|;
+		foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
+			print $fh qq|<li>|,
+				qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
+				biblioitem_html($biblionumber),
+				qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
+				qq|</li>\n|;
+		}
+		print $fh qq|</ul>\n|;
+	}
+}
+
 foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
 	my $first = substr( $row->{full_name}, 0, 1 );
@@ -261,18 +276,10 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	open(my $fh, '>:encoding(utf-8)', "$path.new");
 	print $fh html_title($row->{full_name}, "bibliografija");
 	print $fh qq|<h1>$row->{full_name} - bibliografija za razdoblje 2008-2013</h1>|;
-	foreach my $category ( sort keys %{ $authors->{ $row->{authid} } } ) {
- 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<h2>$label</h2>\n<ul>\n|;
-		foreach my $biblionumber ( @{ $authors->{ $row->{authid} }->{$category} } ) {
-			print $fh qq|<li>|,
-				qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
-				biblioitem_html($biblionumber),
-				qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
-				qq|</li>\n|;
-		}
-		print $fh qq|</ul>\n|;
-	}
+
+	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
+	author_html( $fh, $row->{authid}, 'sec' => 'Sekundarno autorstvo' );
+
 	print $fh html_end;
 	close($fh);
 	rename "$path.new", "$path.html";
