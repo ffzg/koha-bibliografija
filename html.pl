@@ -155,7 +155,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
         if ($elt->localname eq 'controlfield') {
 			if ( $tag eq '008' ) {
-				 $biblio_year->{ $row->{biblionumber} } = $elt->textContent;
+				 $biblio_year->{ $row->{biblionumber} } = substr($elt->textContent, 7, 4 );
 			}
 			next;
         } elsif ($elt->localname eq 'datafield') {
@@ -229,6 +229,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 debug 'authors' => $authors;
 debug 'type_stats' => $type_stats;
 debug 'skip' => $skip;
+debug 'biblio_year' => $biblio_year;
 
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
@@ -337,6 +338,13 @@ debug 'department_category_author' => $department_category_author;
 
 mkdir 'html/departments' unless -d 'html/departments';
 
+sub unique_biblionumber {
+	my @v = @_;
+	my $u;
+	$u->{$_}++ foreach @v;
+	return sort { $biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b } keys %$u;
+}
+
 open(my $dep_fh, '>:encoding(utf-8)', 'html/departments/index.new');
 print $dep_fh html_title('Odsijeci Filozofskog fakulteta u Zagrebu'), qq|<ul>\n|;
 foreach my $department ( sort keys %$department_category_author ) {
@@ -355,7 +363,9 @@ foreach my $department ( sort keys %$department_category_author ) {
 		my @authids = @{ $department_category_author->{$department}->{$category} };
 		next unless @authids;
 
-		my @biblionumber = map { @{ $authors->{$_}->{aut}->{$category} } } grep { exists $authors->{$_}->{aut}->{$category} } @authids;
+		my @biblionumber = unique_biblionumber map { @{ $authors->{$_}->{aut}->{$category} } } grep { exists $authors->{$_}->{aut}->{$category} } @authids;
+		my $unique;
+		$unique->{$_}++ foreach @biblionumber;
 
 		next unless @biblionumber;
 
@@ -375,7 +385,7 @@ foreach my $department ( sort keys %$department_category_author ) {
 		my @authids = @{ $department_category_author->{$department}->{$category} };
 		next unless @authids;
 
-		my @biblionumber = map { @{ $authors->{$_}->{sec}->{$category} } } grep { exists $authors->{$_}->{sec}->{$category} } @authids;
+		my @biblionumber = unique_biblionumber map { @{ $authors->{$_}->{sec}->{$category} } } grep { exists $authors->{$_}->{sec}->{$category} } @authids;
 
 		next unless @biblionumber;
 
