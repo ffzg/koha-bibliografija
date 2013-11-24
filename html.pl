@@ -42,11 +42,15 @@ from auth_header
 
 $sth_auth->execute();
 while( my $row = $sth_auth->fetchrow_hashref ) {
+	if ( $row->{department} !~ m/Filozofski fakultet u Zagrebu/ ) {
+		push @{ $skip->{nije_ffzg} }, $row;
+		next;
+	}
 	$auth_header->{ $row->{authid} } = $row->{full_name};
-	$row->{department} =~ s/, Filozofski fakultet u Zagrebu\s*// || next;
+	$row->{department} =~ s/, Filozofski fakultet u Zagrebu.*$//;
 	$row->{department} =~ s/^.+\.\s*//;
-	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 #	warn dump( $row );
+	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	push @authors, $row;
 
 }
