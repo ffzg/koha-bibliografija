@@ -15,75 +15,28 @@ use lib '/srv/koha_ffzg';
 use C4::Context;
 use XML::LibXML;
 use XML::LibXSLT;
-use XML::Simple;
 
 my $dbh = C4::Context->dbh;
 
-my $xslfilename = 'compact.xsl';
-
-my $authors;
-my $marcxml;
-
-my $sth_select_authors  = $dbh->prepare(q{
-select
-	biblionumber,
-	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="9"]') as first_author,
-	ExtractValue(marcxml,'//datafield[@tag="700"]/subfield[@code="9"]') as other_authors,
-	ExtractValue(marcxml,'//datafield[@tag="942"]/subfield[@code="t"]') as category,
-	itemtype,
-	marcxml
-from biblioitems
-where
-	agerestriction > 0
-	and SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) between 2008 and 2013
-order by SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) desc
-});
-
-$sth_select_authors->execute();
-while( my $row = $sth_select_authors->fetchrow_hashref ) {
-#	warn dump($row),$/;
-	if ( $row->{first_author} || $row->{itemtype} !~ m/^KNJ/ ) {
-		my $all_authors = join(' ', $row->{first_author}, $row->{other_authors});
-		foreach my $authid ( split(/\s+/, $all_authors) ) {
-			push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
-			$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
-		}
-	} else {
-		my $xml = XMLin( $row->{marcxml}, ForceArray => [ 'subfield' ] );
-		foreach my $f700 ( map { $_->{subfield} } grep { $_->{tag} eq 700 } @{ $xml->{datafield} } ) {
-			my $authid = 0;
-			my $is_edt = 0;
-			foreach my $sf ( @$f700 ) {
-				if ( $sf->{code} eq '4' && $sf->{content} =~ m/^edt/ ) {
-					$is_edt++;
-				} elsif ( $sf->{code} eq '9' ) {
-					$authid = $sf->{content};
-				}
-			}
-			if ( $authid && $is_edt ) {
-#				warn "# ++ ", $row->{biblionumber}, " $authid f700 ", dump( $f700 );
-				push @{ $authors->{$authid}->{ $row->{category} } }, $row->{biblionumber};
-				$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
-			} else {
-#				warn "# -- ", $row->{biblionumber}, " f700 ", dump( $f700 );
-			}
-		}
-	}
+sub debug {
+	my ($title, $data) = @_;
+	print "# $title ",dump($data), $/;
 }
+
+my $xslfilename = 'compact.xsl';
 
 my $auth_header;
 my $auth_department;
 my @authors;
 
-my $all_authids = join(',', grep { length($_) > 0 } keys %$authors);
+my $skip;
+
 my $sth_auth = $dbh->prepare(q{
 select
 	authid,
 	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="a"]') as full_name,
 	ExtractValue(marcxml,'//datafield[@tag="680"]/subfield[@code="a"]') as department
 from auth_header
-where
-	authid in (} . $all_authids . q{)
 });
 
 $sth_auth->execute();
@@ -97,6 +50,164 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 
 }
 
+debug 'auth_department' => $auth_department;
+
+
+my $authors;
+my $author_count;
+my $marcxml;
+
+my $sth_select_authors  = $dbh->prepare(q{
+select
+	biblionumber,
+	itemtype,
+	marcxml
+from biblioitems
+where
+	agerestriction > 0
+});
+
+=for sql
+--	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="9"]') as first_author,
+--	ExtractValue(marcxml,'//datafield[@tag="700"]/subfield[@code="9"]') as other_authors,
+--	ExtractValue(marcxml,'//datafield[@tag="942"]/subfield[@code="t"]') as category,
+
+--	and SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) between 2008 and 2013
+-- order by SUBSTR(ExtractValue(marcxml,'//controlfield[@tag="008"]'),8,4) desc
+=cut
+
+my $biblio_year;
+
+my $parser = XML::LibXML->new();
+$parser->recover_silently(0); # don't die when you find &, >, etc
+my $style_doc = $parser->parse_file($xslfilename);
+my $xslt = XML::LibXSLT->new();
+my $parsed = $xslt->parse_stylesheet($style_doc);
+
+my $biblio_html;
+
+open(my $xml_fh, '>', '/tmp/bibliografija.xml') if $ENV{XML};
+
+sub biblioitem_html {
+	my $biblionumber = shift;
+
+	return $biblio_html->{$biblionumber} if exists $biblio_html->{$biblionumber};
+
+	my $xmlrecord = $marcxml->{$biblionumber} || die "missing $biblionumber marcxml";
+
+	print $xml_fh $xmlrecord if $ENV{XML};
+
+	my $source = eval { $parser->parse_string($xmlrecord) };
+	if ( $@ ) {
+		warn "SKIP $biblionumber corrupt XML";
+		push @{ $skip->{XML_corrupt} }, $biblionumber;
+		return;
+	}
+
+	my $transformed = $parsed->transform($source);
+	$biblio_html->{$biblionumber} = $parsed->output_string( $transformed );
+
+	return ( $biblio_html->{$biblionumber}, $source ) if wantarray;
+	return $biblio_html->{$biblionumber};
+}
+
+$sth_select_authors->execute();
+while( my $row = $sth_select_authors->fetchrow_hashref ) {
+#	warn dump($row),$/;
+
+	my $biblio;
+
+	$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
+
+	my ( undef, $doc ) = biblioitem_html( $row->{biblionumber} );
+	if ( ! $doc ) {
+		warn "ERROR can't parse MARCXML ", $row->{biblionumber}, " ", $row->{marcxml}, "\n";
+		next;
+	}
+
+	my $root = $doc->documentElement;
+=for leader
+	my @leaders = $root->getElementsByLocalName('leader');
+	if (@leaders) {
+		my $leader = $leaders[0]->textContent;
+		warn "leader $leader\n";
+	}
+=cut
+
+	my $extract = {
+		'008' => undef,
+		'100' => '9',
+		'700' => '(9|4)',
+		'942' => 't'
+	};
+
+	my $data;
+
+	foreach my $elt ($root->getChildrenByLocalName('*')) {
+		my $tag = $elt->getAttribute('tag');
+		next if ! $tag;
+		next unless exists $extract->{ $tag };
+
+        if ($elt->localname eq 'controlfield') {
+			if ( $tag eq '008' ) {
+				 $biblio_year->{ $row->{biblionumber} } = $elt->textContent;
+			}
+			next;
+        } elsif ($elt->localname eq 'datafield') {
+			my $sf_data;
+            foreach my $sfelt ($elt->getChildrenByLocalName('subfield')) {
+                my $sf = $sfelt->getAttribute('code');
+				next unless $sf =~ m/$extract->{$tag}/;
+				if ( exists $sf_data->{$sf} ) {
+					$sf_data->{$sf} .= " " . $sfelt->textContent();
+				} else {
+ 					$sf_data->{$sf} = $sfelt->textContent();
+				}
+			}
+			push @{ $data->{$tag} }, $sf_data if $sf_data;
+        }
+    }
+
+#	warn "# ", $row->{biblionumber}, " data ",dump($data);
+
+	my $category = $data->{942}->[0]->{'t'};
+	if ( ! $category ) {
+		warn "# SKIP ", $row->{biblionumber}, " no category in ", dump($data);
+		push @{ $skip->{no_category} }, $row->{biblionumber};
+		next;
+	}
+
+
+	if ( exists $data->{100} ) {
+			my @first_author = map { $_->{'9'} } @{ $data->{100} };
+			foreach my $authid ( @first_author ) {
+				push @{ $authors->{$authid}->{ $category } }, $row->{biblionumber};
+				$author_count->{aut}->{$authid}++;
+			}
+	}
+
+	if ( exists $data->{700} ) {
+			foreach my $auth ( @{ $data->{700} } ) {
+				my $authid = $auth->{9} || next;
+				my $type   = $auth->{4} || next; #die "no 4 in ",dump($data);
+			
+				push @{ $authors->{$authid}->{ $category } }, $row->{biblionumber};
+				if ( $type =~ m/aut/ ) {
+					$author_count->{aut}->{ $authid }++;
+				} elsif ( $type =~ m/(edt|tr)/ ) {
+					$author_count->{$1}->{ $authid }++;
+				} else {
+					warn "# SKIP ", $row->{biblionumber}, ' no 700$4 in ', dump($data);
+					push @{ $skip->{ 'no_700$4' } }, $row->{biblionumber};
+				}
+			}
+	}
+
+}
+
+debug 'authors' => $authors;
+debug 'author_count' => $author_count;
+
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
 select authorised_value, lib from authorised_values where category = 'BIBCAT'
@@ -106,7 +217,7 @@ while( my $row = $sth_categories->fetchrow_hashref ) {
 	$category_label->{ $row->{authorised_value} } = $row->{lib};
 
 }
-#warn dump( $category_label );
+debug 'category_label' => $category_label;
 
 sub html_title {
 	return qq|<html>
@@ -123,34 +234,14 @@ sub html_end {
 	return qq|</body>\n</html\n|;
 }
 
-my $biblio_html;
-
-my $parser = XML::LibXML->new();
-$parser->recover_silently(0); # don't die when you find &, >, etc
-my $style_doc = $parser->parse_file($xslfilename);
-my $xslt = XML::LibXSLT->new();
-my $parsed = $xslt->parse_stylesheet($style_doc);
-
-sub biblioitem_html {
-	my $biblionumber = shift;
-
-	return $biblio_html->{$biblionumber} if exists $biblio_html->{$biblionumber};
-
-	my $xmlrecord = $marcxml->{$biblionumber} || die "missing $biblionumber marcxml";
-
-	my $source = $parser->parse_string($xmlrecord);
-
-	my $transformed = $parsed->transform($source);
-	return $biblio_html->{$biblionumber} = $parsed->output_string( $transformed );
-}
-
-
 mkdir 'html' unless -d 'html';
 
 open(my $index, '>:encoding(utf-8)', 'html/index.new');
 print $index html_title('Bibliografija Filozofskog fakulteta');
 
 my $first_letter = '';
+
+debug 'authors' => \@authors;
 
 foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
@@ -188,11 +279,7 @@ print $index html_end;
 close($index);
 rename 'html/index.new', 'html/index.html';
 
-#print dump( $authors );
-
-#print dump( $auth_header );
-
-#print dump( $auth_department );
+debug 'auth_header' => $auth_header;
 
 
 my $department_category_author;
@@ -204,7 +291,7 @@ foreach my $department ( sort keys %$auth_department ) {
 	}
 }
 
-#print dump( $department_category_author );
+debug 'department_category_author' => $department_category_author;
 
 mkdir 'html/departments' unless -d 'html/departments';
 
@@ -239,4 +326,6 @@ foreach my $department ( sort keys %$department_category_author ) {
 print $dep_fh qq|</ul>\n|, html_end;
 close($dep_fh);
 rename 'html/departments/index.new', 'html/departments/index.html';
+
+debug 'skip' => $skip;
 
