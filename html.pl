@@ -155,7 +155,12 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
         if ($elt->localname eq 'controlfield') {
 			if ( $tag eq '008' ) {
-				 $biblio_year->{ $row->{biblionumber} } = $data->{year} = substr($elt->textContent, 7, 4 );
+				my $year = substr($elt->textContent, 7, 4 );
+				if ( $year !~ m/^\d+$/ ) {
+					$year = 0;
+					push @{ $skip->{invalid_year} }, $row->{biblionumber};
+				}
+				$biblio_year->{ $row->{biblionumber} } = $data->{year} = $year;
 			}
 			next;
         } elsif ($elt->localname eq 'datafield') {
