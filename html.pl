@@ -21,7 +21,7 @@ my $dbh = C4::Context->dbh;
 
 sub debug {
 	my ($title, $data) = @_;
-	print "# $title ",dump($data), $/;
+	print "# $title ",dump($data), $/ if $ENV{DEBUG};
 }
 
 my $xslfilename = 'compact.xsl';
