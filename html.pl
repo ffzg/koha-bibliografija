@@ -90,13 +90,14 @@ my $xslt = XML::LibXSLT->new();
 my $parsed = $xslt->parse_stylesheet($style_doc);
 
 my $biblio_html;
+my $biblio_parsed;
 
 open(my $xml_fh, '>', '/tmp/bibliografija.xml') if $ENV{XML};
 
 sub biblioitem_html {
-	my $biblionumber = shift;
+	my ($biblionumber, $parse_only) = @_;
 
-	return $biblio_html->{$biblionumber} if exists $biblio_html->{$biblionumber};
+	return $biblio_html->{$biblionumber} if exists $biblio_html->{$biblionumber} && ! $parse_only;
 
 	my $xmlrecord = $marcxml->{$biblionumber} || confess "missing $biblionumber marcxml";
 
@@ -109,10 +110,16 @@ sub biblioitem_html {
 		return;
 	}
 
+	if ( $parse_only ) {
+		$biblio_parsed->{$biblionumber} = $source;
+		return $source;
+	}
+
 	my $transformed = $parsed->transform($source);
 	$biblio_html->{$biblionumber} = $parsed->output_string( $transformed );
 
-	return ( $biblio_html->{$biblionumber}, $source ) if wantarray;
+	delete $biblio_parsed->{$biblionumber};
+
 	return $biblio_html->{$biblionumber};
 }
 
@@ -124,7 +131,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 	$marcxml->{ $row->{biblionumber} } = $row->{marcxml};
 
-	my ( undef, $doc ) = biblioitem_html( $row->{biblionumber} );
+	my $doc = biblioitem_html( $row->{biblionumber}, 1 );
 	if ( ! $doc ) {
 #		warn "ERROR can't parse MARCXML ", $row->{biblionumber}, " ", $row->{marcxml}, "\n";
 		next;
