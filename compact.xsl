@@ -854,6 +854,11 @@
 				<xsl:text>Recenzija: </xsl:text>
             	<xsl:value-of select="marc:subfield[@code='v']"/>
             </xsl:if>
+            <xsl:if test="marc:subfield[@code='r']">
+				<br/>
+				<xsl:text>Bibliografske baze: </xsl:text>
+            	<xsl:value-of select="marc:subfield[@code='r']"/>
+            </xsl:if>
         </xsl:for-each>
 		</div>
     </xsl:if>
@@ -863,7 +868,7 @@
             <xsl:call-template name="chopPunctuation">
                 <xsl:with-param name="chopString">
                     <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">abq</xsl:with-param>
+                        <xsl:with-param name="codes">abcq</xsl:with-param>
                     </xsl:call-template>
                 </xsl:with-param>
                 <xsl:with-param name="punctuation">
@@ -898,14 +903,14 @@
         </xsl:for-each>
         <xsl:if test="marc:subfield[@code='c'] or marc:subfield[@code='d'] or marc:subfield[@code='n']">
                 <xsl:call-template name="subfieldSelect">
-                    <xsl:with-param name="codes">dn</xsl:with-param>
+                    <xsl:with-param name="codes">cdn</xsl:with-param>
                 </xsl:call-template>
         </xsl:if>
     </xsl:template>
 
     <xsl:template name="nameACDEQ">
             <xsl:call-template name="subfieldSelect">
-                <xsl:with-param name="codes">adeq</xsl:with-param>
+                <xsl:with-param name="codes">acdeq</xsl:with-param>
             </xsl:call-template>
     </xsl:template>
 
@@ -914,7 +919,7 @@
             <xsl:call-template name="chopPunctuation">
                 <xsl:with-param name="chopString">
                     <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">bc</xsl:with-param>
+                        <xsl:with-param name="codes">b</xsl:with-param>
                     </xsl:call-template>
                 </xsl:with-param>
             </xsl:call-template>
