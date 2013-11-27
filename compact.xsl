@@ -857,7 +857,10 @@
             <xsl:if test="marc:subfield[@code='r']">
 				<br/>
 				<xsl:text>Bibliografske baze: </xsl:text>
-            	<xsl:value-of select="marc:subfield[@code='r']"/>
+				<xsl:for-each select="marc:subfield[@code='r']">
+	            	<xsl:value-of select="."/>
+					<xsl:text> | </xsl:text>
+				</xsl:for-each>
             </xsl:if>
         </xsl:for-each>
 		</div>
@@ -1026,15 +1029,13 @@
 		  </xsl:when>
 		  <xsl:otherwise><xsl:call-template name="nameABCDQ"/></xsl:otherwise>
     </xsl:choose>
-	<xsl:if test="marc:subfield[@code='4' or @code='e'] != 'aut'">
-      <span class="relatorcode">
+	<xsl:if test="marc:subfield[@code='4'] != 'aut'">
       <xsl:text> [</xsl:text>
-	  <xsl:choose>
-	    <xsl:when test="marc:subfield[@code=4]"><xsl:value-of select="marc:subfield[@code=4]"/></xsl:when>
-	    <xsl:otherwise><xsl:value-of select="marc:subfield[@code='e']"/></xsl:otherwise>
-	  </xsl:choose>
+		<xsl:for-each select="marc:subfield[@code='4']">
+			<xsl:value-of select="."/>
+            <xsl:choose><xsl:when test="position()=last()"><xsl:text></xsl:text></xsl:when><xsl:otherwise><xsl:text>, </xsl:text></xsl:otherwise></xsl:choose>
+		</xsl:for-each>
 	  <xsl:text>]</xsl:text>
-      </span>
 	</xsl:if>
         	<xsl:text> ; </xsl:text>
         </xsl:for-each>
@@ -1059,15 +1060,13 @@
 		  </xsl:otherwise>
     </xsl:choose>
 	</xsl:if>
-	<xsl:if test="marc:subfield[@code='4' or @code='e'] != 'aut'">
-      <span class="relatorcode">
+	<xsl:if test="marc:subfield[@code='4'] != 'aut'">
       <xsl:text> [</xsl:text>
-	  <xsl:choose>
-	    <xsl:when test="marc:subfield[@code=4]"><xsl:value-of select="marc:subfield[@code=4]"/></xsl:when>
-	    <xsl:otherwise><xsl:value-of select="marc:subfield[@code='e']"/></xsl:otherwise>
-	  </xsl:choose>
+		<xsl:for-each select="marc:subfield[@code='4']">
+			<xsl:value-of select="."/>
+            <xsl:choose><xsl:when test="position()=last()"><xsl:text></xsl:text></xsl:when><xsl:otherwise><xsl:text>, </xsl:text></xsl:otherwise></xsl:choose>
+		</xsl:for-each>
 	  <xsl:text>]</xsl:text>
-      </span>
 	</xsl:if>
         </xsl:for-each>
         </span>
