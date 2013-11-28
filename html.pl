@@ -328,7 +328,7 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	print $fh qq|<h1>$row->{full_name} - bibliografija za razdoblje 2008-2013</h1>|;
 
 	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
-	author_html( $fh, $row->{authid}, 'sec' => 'Sekundarno autorstvo' );
+	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, krička izdanja' );
 
 	print $fh html_end;
 	close($fh);
