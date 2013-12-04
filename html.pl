@@ -426,20 +426,27 @@ print $dep_fh qq|</ul>\n|, html_end;
 close($dep_fh);
 rename 'html/departments/index.new', 'html/departments/index.html';
 
-my $azvo_stat;
+my $azvo_stat_authors;
+my $azvo_stat_biblio;
 
 foreach my $department ( sort keys %$department_category_author ) {
 	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
 		foreach my $authid ( @{ $department_category_author->{$department}->{$category} } ) {
 			foreach my $type ( keys %{ $authors->{$authid} } ) {
 				next unless exists $authors->{$authid}->{$type}->{$category};
-				$azvo_stat->{ $department }->{ $category }->{ $type } += $#{ $authors->{$authid}->{$type}->{$category} } + 1;
+				$azvo_stat_authors->{ $department }->{ $category }->{ $type } += $#{ $authors->{$authid}->{$type}->{$category} } + 1;
+				push @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } },  @{ $authors->{$authid}->{$type}->{$category} };
 			}
+		}
+		foreach my $type ( keys %{ $azvo_stat_biblio->{ $department }->{ $category } } ) {
+				my @biblios = unique_biblionumber @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } };
+				$azvo_stat_biblio->{ $department }->{ $category }->{ $type } = $#biblios + 1;
 		}
 	}
 }
 
-debug 'azvo_stat' => $azvo_stat;
+debug 'azvo_stat_authors' => $azvo_stat_authors;
+debug 'azvo_stat_biblio' => $azvo_stat_biblio;
 
 =for later
 open(my $fh, '>', 'html/azvo.new');
