@@ -91,6 +91,7 @@ my $parsed = $xslt->parse_stylesheet($style_doc);
 
 my $biblio_html;
 my $biblio_parsed;
+my $biblio_in_database;
 
 open(my $xml_fh, '>', '/tmp/bibliografija.xml') if $ENV{XML};
 
@@ -150,7 +151,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 		'008' => undef,
 		'100' => '9',
 		'700' => '(9|4)',
-		'942' => 't'
+		'942' => '(t|r)'
 	};
 
 	my $data;
@@ -202,6 +203,9 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 		next;
 	}
 
+	if ( my $in_database = $data->{942}->[0]->{'r'} ) {
+		$biblio_in_database->{ $row->{biblionumber} } = $in_database;
+	}
 
 	my $have_100 = 1;
 
@@ -250,6 +254,7 @@ debug 'authors' => $authors;
 debug 'type_stats' => $type_stats;
 debug 'skip' => $skip;
 debug 'biblio_year' => $biblio_year;
+debug 'biblio_in_database' => $biblio_in_database;
 
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
