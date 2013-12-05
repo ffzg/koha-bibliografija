@@ -11,7 +11,6 @@ use autodie;
 use locale;
 use Text::Unaccent;
 use Carp qw(confess);
-use Storable;
 
 
 use lib '/srv/koha_ffzg';
@@ -24,7 +23,6 @@ my $dbh = C4::Context->dbh;
 sub debug {
 	my ($title, $data) = @_;
 	print "# $title ",dump($data), $/ if $ENV{DEBUG};
-	store $data, "storable/$title";
 }
 
 my $xslfilename = 'compact.xsl';
@@ -481,9 +479,9 @@ while( <$report> ) {
 	}
 }
 
-warn "# report_lines = ", dump( @report_lines );
-warn "# sub_labels = ", dump( $sub_labels );
-warn "# report_labels = ", dump( @report_labels );
+debug 'report_lines', \@report_lines;
+debug 'sub_labels', $sub_labels;
+debug 'report_labels', \@report_labels;
 
 my @departments = sort keys %$azvo_stat_biblio;
 
@@ -508,13 +506,11 @@ foreach my $department ( keys %$azvo_stat_biblio ) {
 	my $dep_id = $#departments;
 	foreach my $line ( @report_lines ) {
 		my $label = $line->[0];
-		warn "# line [$label] = ", dump( $line );
 		my @biblionumbers;
 		foreach ( 1 .. $#$line ) {
 			my ( $category, $type ) = @{ $line->[ $_ ] };
 			my $b = $azvo_stat_biblio->{ $department }->{$category}->{$type};
-			warn "## $_ $category / $type = ", $#$b + 1, " ", dump( $b );
-			push @biblionumbers, @$b;
+			push @biblionumbers, @$b if $b;
 		}
 		if ( $sub_labels->{$label} ) {
 			my $sub_stats;
@@ -549,7 +545,7 @@ foreach my $department ( keys %$azvo_stat_biblio ) {
 	}
 }
 
-warn "# table ", dump( $table );
+debug 'table', $table;
 
 open(my $fh, '>:encoding(utf-8)', 'html/azvo.new');
 
