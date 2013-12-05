@@ -27,3 +27,7 @@ li a {
 	font-size: 80%;
 	color: #707070;
 }
+
+td {
+	text-align: center;
+}

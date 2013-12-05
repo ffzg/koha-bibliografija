@@ -1,0 +1,20 @@
+ZCLA	1.01 + 1.02 + 1.03
+	1:	942r	^(Social Sciences Citation Index|Current Contents)
+	2:	942r	.+
+	3:	942r
+ZSKU	1.06 + 1.08
+	1:	942r	^(Social Sciences Citation Index|Current Contents)
+	2:	942r	.+
+	3:	942r
+ZSKR	1.06 + 1.08
+	1:	942v	^Recenzija
+	2:	942v	^DomRecenzija
+	3:	942v	^(Nema|.+)
+SCLA	1.04
+SSKU	1.07 + 1.09
+ZMON	1.16.1
+UKNJ	2.01 edt
+PKNJ	2.01 trl + 2.50.2 trl
+IZDKNJ	2.01
+	dom:	008		^.{13}(ci|hrv)
+	str:	008		.+	

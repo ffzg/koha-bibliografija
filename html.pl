@@ -11,6 +11,8 @@ use autodie;
 use locale;
 use Text::Unaccent;
 use Carp qw(confess);
+use Storable;
+
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
@@ -22,6 +24,7 @@ my $dbh = C4::Context->dbh;
 sub debug {
 	my ($title, $data) = @_;
 	print "# $title ",dump($data), $/ if $ENV{DEBUG};
+	store $data, "storable/$title";
 }
 
 my $xslfilename = 'compact.xsl';
@@ -91,7 +94,7 @@ my $parsed = $xslt->parse_stylesheet($style_doc);
 
 my $biblio_html;
 my $biblio_parsed;
-my $biblio_in_database;
+my $biblio_data;
 
 open(my $xml_fh, '>', '/tmp/bibliografija.xml') if $ENV{XML};
 
@@ -151,7 +154,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 		'008' => undef,
 		'100' => '9',
 		'700' => '(9|4)',
-		'942' => '(t|r)'
+		'942' => '(t|r|v)'
 	};
 
 	my $data;
@@ -163,12 +166,14 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
         if ($elt->localname eq 'controlfield') {
 			if ( $tag eq '008' ) {
-				my $year = substr($elt->textContent, 7, 4 );
+				my $content = $elt->textContent;
+				my $year = substr($content, 7, 4 );
 				if ( $year !~ m/^\d+$/ ) {
 					$year = 0;
 					push @{ $skip->{invalid_year} }, $row->{biblionumber};
 				}
 				$biblio_year->{ $row->{biblionumber} } = $data->{year} = $year;
+				$data->{'008'} = $content;
 			}
 			next;
         } elsif ($elt->localname eq 'datafield') {
@@ -201,10 +206,6 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 #		warn "# SKIP ", $row->{biblionumber}, " no category in ", dump($data);
 		push @{ $skip->{no_category} }, $row->{biblionumber};
 		next;
-	}
-
-	if ( my $in_database = $data->{942}->[0]->{'r'} ) {
-		$biblio_in_database->{ $row->{biblionumber} } = $in_database;
 	}
 
 	my $have_100 = 1;
@@ -246,7 +247,10 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 					$skip->{ 'no_700$4' }->{ $row->{biblionumber} }++;
 				}
 			}
+			delete $data->{700};
 	}
+
+	$biblio_data->{ $row->{biblionumber} } = $data;
 
 }
 
@@ -254,7 +258,7 @@ debug 'authors' => $authors;
 debug 'type_stats' => $type_stats;
 debug 'skip' => $skip;
 debug 'biblio_year' => $biblio_year;
-debug 'biblio_in_database' => $biblio_in_database;
+debug 'biblio_data' => $biblio_data;
 
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
@@ -445,7 +449,8 @@ foreach my $department ( sort keys %$department_category_author ) {
 		}
 		foreach my $type ( keys %{ $azvo_stat_biblio->{ $department }->{ $category } } ) {
 				my @biblios = unique_biblionumber @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } };
-				$azvo_stat_biblio->{ $department }->{ $category }->{ $type } = $#biblios + 1;
+#				$azvo_stat_biblio->{ $department }->{ $category }->{ $type } = $#biblios + 1;
+				$azvo_stat_biblio->{ $department }->{ $category }->{ $type } = [ @biblios ];
 		}
 	}
 }
@@ -453,12 +458,116 @@ foreach my $department ( sort keys %$department_category_author ) {
 debug 'azvo_stat_authors' => $azvo_stat_authors;
 debug 'azvo_stat_biblio' => $azvo_stat_biblio;
 
-=for later
-open(my $fh, '>', 'html/azvo.new');
+my @report_lines;
+my @report_labels;
+
+my $label;
+my $sub_labels;
+open(my $report, '<', 'AZVO.txt');
+while( <$report> ) {
+	chomp;
+	if ( /^(\w+)\t+(.+)/ ) {
+		$label = $1;
+		push @report_labels, $label;
+		my $type = [ map { m/\s+/ ? [ split(/\s+/,$_) ] : [ $_, 'aut' ] } split (/\s*\+\s*/, $2) ];
+		push @report_lines, [ $label, @$type ];
+	} elsif ( /^\t+(\S+):\t+(\d+)(\w*)\t*(.*)$/ ) {
+		push @{ $sub_labels->{$label} }, [ $1, $2, $3, $4 ];
+		my $sub_label = $1;
+		pop (@report_labels) if ( $report_labels[ $#report_labels ] =~ m/^$label$/ ); # remove partial name
+		push @report_labels, $label . $sub_label;
+	} else {
+		die "ERROR: [$_]\n";
+	}
+}
+
+warn "# report_lines = ", dump( @report_lines );
+warn "# sub_labels = ", dump( $sub_labels );
+warn "# report_labels = ", dump( @report_labels );
+
+my @departments = sort keys %$azvo_stat_biblio;
+
+my $department2col;
+$department2col->{ $departments[$_] } = $_ foreach ( 0 .. $#departments );
+my $label2row;
+$label2row->{ $report_labels[$_] } = $_ foreach ( 0 .. $#report_labels );
 
 
+my $table;
+
+sub table_count {
+	my $label = shift @_;
+	my $department = shift @_;
+	my @biblionumbers = @_;
+	my $unique;
+	$unique->{$_}++ foreach @biblionumbers;
+	$table->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar keys %$unique;
+}
+
+foreach my $department ( keys %$azvo_stat_biblio ) {
+	my $dep_id = $#departments;
+	foreach my $line ( @report_lines ) {
+		my $label = $line->[0];
+		warn "# line [$label] = ", dump( $line );
+		my @biblionumbers;
+		foreach ( 1 .. $#$line ) {
+			my ( $category, $type ) = @{ $line->[ $_ ] };
+			my $b = $azvo_stat_biblio->{ $department }->{$category}->{$type};
+			warn "## $_ $category / $type = ", $#$b + 1, " ", dump( $b );
+			push @biblionumbers, @$b;
+		}
+		if ( $sub_labels->{$label} ) {
+			my $sub_stats;
+			foreach my $biblionumber ( @biblionumbers ) {
+				my $data = $biblio_data->{$biblionumber} || die "can't find biblionumber $biblionumber";
+				foreach my $sub_label ( @{ $sub_labels->{$label} } ) {
+					my ( $sub_label, $field, $sf, $regex ) = @$sub_label;
+					if ( ! $regex ) {
+						push @{ $sub_stats->{ $sub_label } }, $biblionumber;
+						last;
+					}
+					if ( $field < 100 ) {
+						if ( $data->{$field} =~ m/$regex/ ) {
+							push @{ $sub_stats->{ $sub_label } }, $biblionumber;
+							last;
+						}
+					} else {
+						if ( exists $data->{$field}->[0]->{$sf} && $data->{$field}->[0]->{$sf} =~ m/$regex/ ) {
+							push @{ $sub_stats->{ $sub_label } }, $biblionumber;
+							last;
+						}
+					}
+				}
+			}
+			foreach my $sub_label ( keys %$sub_stats ) {
+				my $full_label = $label . $sub_label;
+				table_count $full_label, $department, @{ $sub_stats->{$sub_label} };
+			}
+		} else {
+			table_count $label, $department, @biblionumbers;
+		}
+	}
+}
+
+warn "# table ", dump( $table );
+
+open(my $fh, '>:encoding(utf-8)', 'html/azvo.new');
+
+print $fh html_title('AZVO tablica');
+
+print $fh "<table border=1>\n";
+print $fh "<tr><th></th>";
+print $fh "<th>$_</th>" foreach @departments;
+print $fh "</tr>\n";
+
+foreach my $row ( 0 .. $#$table ) {
+	print $fh "<tr><th>", $report_labels[$row], "</th>";
+	print $fh "<td>", $table->[ $row ]->[ $_ ] || '', "</td>" foreach 0 .. $#departments;
+	print $fh "</tr>";
+}
+
+print $fh "</table>\n", html_end;
 
 close($fh);
 rename 'html/azvo.new', 'html/azvo.html';
-=cut
 
