@@ -1,20 +1,20 @@
-ZCLA	1.01 + 1.02 + 1.03
-	1:	942r	^(Social Sciences Citation Index|Current Contents)
-	2:	942r	.+
-	3:	942r
-ZSKU	1.06 + 1.08
-	1:	942r	^(Social Sciences Citation Index|Current Contents)
-	2:	942r	.+
-	3:	942r
-ZSKR	1.06 + 1.08
-	1:	942v	^Recenzija
-	2:	942v	^DomRecenzija
-	3:	942v	^(Nema|.+)
-SCLA	1.04
-SSKU	1.07 + 1.09
-ZMON	1.16.1
-UKNJ	2.01 edt
-PKNJ	2.01 trl + 2.50.2 trl
-IZDKNJ	2.01
-	dom:	008		^.{13}(ci|hrv)
-	str:	008		.+	
+Znanstveni rad u časopisu			1.01 + 1.02 + 1.03
+	- CC, WoS, Scopus:					942r	^(Social Sciences Citation Index|Current Contents)
+	- ostale relevantne baze:		942r	.+
+	- nije u bazi:					942r
+Autorska knjiga		2.01 + 2.01.1 + 2.02 + 2.03 + 2.04 + 2.06
+	- domaća:		008		^.{15}(ci|hrv)
+	- strana:		008		.+
+Znanstveni rad sa skupa		1.06 + 1.08
+	- u bazama:				942r	.+
+	- nije u bazama:			942r
+Znanstveni rad sa skupa recenzija	1.06 + 1.08
+	- međunarodna:	942v	^Recenzija
+	- domaća:		942v	^DomRecenzija
+	- nema:			942v	^(Nema|.+)
+Stručni rad u časopisu				1.04
+Stručni rad sa skupa				1.07 + 1.09
+Poglavlje u knjizi znanstveni rad	1.16.1 + 1.16.2
+Poglavlje u knjizi stručni rad		1.17
+Urednička knjiga	2.01 edt + 2.02 edt + 2.03 edt + 2.06 edt + 2.25 edt
+Prijevod knjige		2.01 trl + 2.02 trl + 2.03 trl + 2.06 trl + 2.25 trl + 2.50 trl + 2.50.1 trl + 2.50.2 trl
