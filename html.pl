@@ -603,9 +603,9 @@ foreach my $group ( keys %$table ) {
 		print $fh "</tr>\n";
 
 		foreach my $row ( 0 .. $#{ $table->{$group} } ) {
-			print $fh "<tr><th>", $report_labels[$row], "</th>";
-			print $fh "<td>", $table->{$group}->[ $row ]->[ $_ ] || '', "</td>" foreach 0 .. $#departments;
-			print $fh "</tr>";
+			print $fh "<tr><th>", $report_labels[$row], "</th>\n";
+			print $fh " <td>", $table->{$group}->[ $row ]->[ $_ ] || '', "</td>\n" foreach 0 .. $#departments;
+			print $fh "</tr>\n";
 		}
 
 		print $fh "</table>\n";
