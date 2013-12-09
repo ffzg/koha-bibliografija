@@ -75,7 +75,7 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 		push @{ $skip->{no_academic_group} }, $row;
 	}
 
-	warn dump( $row );
+	warn "# ", dump( $row );
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	push @authors, $row;
 	$department_in_sum->{ $row->{department} }++;
@@ -313,7 +313,7 @@ sub html_title {
 }
 
 sub html_end {
-	return qq|</body>\n</html\n|;
+	return qq|</body>\n</html>\n|;
 }
 
 mkdir 'html' unless -d 'html';
@@ -471,15 +471,22 @@ my $azvo_stat_biblio;
 foreach my $department ( sort keys %$department_category_author ) {
 	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
 		foreach my $authid ( @{ $department_category_author->{$department}->{$category} } ) {
+			my $group = $auth_group->{$authid};
+			if ( ! $group ) {
+				push @{ $skip->{no_auth_group} }, $authid;
+				next;
+			}
 			foreach my $type ( keys %{ $authors->{$authid} } ) {
 				next unless exists $authors->{$authid}->{$type}->{$category};
-				push @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } },  @{ $authors->{$authid}->{$type}->{$category} };
+				push @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type }->{$group} },  @{ $authors->{$authid}->{$type}->{$category} };
+				push @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type }->{''} },  @{ $authors->{$authid}->{$type}->{$category} };
 			}
 		}
 		foreach my $type ( keys %{ $azvo_stat_biblio->{ $department }->{ $category } } ) {
-				my @biblios = unique_biblionumber @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } };
-#				$azvo_stat_biblio->{ $department }->{ $category }->{ $type } = $#biblios + 1;
-				$azvo_stat_biblio->{ $department }->{ $category }->{ $type } = [ @biblios ];
+			foreach my $group ( keys %{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } } ) {
+				my @biblios = unique_biblionumber @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type }->{ $group } };
+				$azvo_stat_biblio->{ $department }->{ $category }->{ $type }->{ $group } = [ @biblios ];
+			}
 		}
 	}
 }
@@ -527,11 +534,14 @@ my $table;
 sub table_count {
 	my $label = shift @_;
 	my $department = shift @_;
+	my $group = shift @_;
 	my @biblionumbers = @_;
 	my $unique;
 	$unique->{$_}++ foreach @biblionumbers;
-	$table->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar keys %$unique;
+	$table->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar keys %$unique;
 }
+
+foreach my $group ( '', keys %$azvo_group_title ) {
 
 foreach my $department ( @departments ) {
 	foreach my $line ( @report_lines ) {
@@ -539,7 +549,7 @@ foreach my $department ( @departments ) {
 		my @biblionumbers;
 		foreach ( 1 .. $#$line ) {
 			my ( $category, $type ) = @{ $line->[ $_ ] };
-			my $b = $azvo_stat_biblio->{ $department }->{$category}->{$type};
+			my $b = $azvo_stat_biblio->{ $department }->{$category}->{$type}->{$group};
 			push @biblionumbers, @$b if $b;
 		}
 		if ( $sub_labels->{$label} ) {
@@ -567,13 +577,15 @@ foreach my $department ( @departments ) {
 			}
 			foreach my $sub_label ( keys %$sub_stats ) {
 				my $full_label = $label . $sub_label;
-				table_count $full_label, $department, @{ $sub_stats->{$sub_label} };
+				table_count $full_label, $department, $group, @{ $sub_stats->{$sub_label} };
 			}
 		} else {
-			table_count $label, $department, @biblionumbers;
+			table_count $label, $department, $group, @biblionumbers;
 		}
 	}
 }
+
+} # group
 
 debug 'table', $table;
 
@@ -581,19 +593,26 @@ open(my $fh, '>:encoding(utf-8)', 'html/azvo.new');
 
 print $fh html_title('AZVO tablica');
 
-print $fh "<table border=1>\n";
-print $fh "<tr><th></th>";
-print $fh "<th>$_</th>" foreach @departments;
-print $fh "</tr>\n";
+foreach my $group ( keys %$table ) {
 
-foreach my $row ( 0 .. $#$table ) {
-	print $fh "<tr><th>", $report_labels[$row], "</th>";
-	print $fh "<td>", $table->[ $row ]->[ $_ ] || '', "</td>" foreach 0 .. $#departments;
-	print $fh "</tr>";
-}
+		print $fh "<h1>$group</h1>" if $group;
 
-print $fh "</table>\n", html_end;
+		print $fh "<table border=1>\n";
+		print $fh "<tr><th></th>";
+		print $fh "<th>$_</th>" foreach @departments;
+		print $fh "</tr>\n";
 
+		foreach my $row ( 0 .. $#{ $table->{$group} } ) {
+			print $fh "<tr><th>", $report_labels[$row], "</th>";
+			print $fh "<td>", $table->{$group}->[ $row ]->[ $_ ] || '', "</td>" foreach 0 .. $#departments;
+			print $fh "</tr>";
+		}
+
+		print $fh "</table>\n";
+
+} # group
+
+print $fh html_end;
 close($fh);
 rename 'html/azvo.new', 'html/azvo.html';
 
