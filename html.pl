@@ -11,7 +11,7 @@ use autodie;
 use locale;
 use Text::Unaccent;
 use Carp qw(confess);
-
+use utf8;
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
@@ -27,9 +27,17 @@ sub debug {
 
 my $xslfilename = 'compact.xsl';
 
+my $azvo_group_title = {
+'znanstveno nastavni' => qr/(profesor|docent|znanstveni)/i,
+'lektori i predavači' => qr/(lektor|predavač)/i,
+'asistenti i novaci' => qr/(asistent|novak)/i,
+};
+
 my $auth_header;
 my $auth_department;
+my $auth_group;
 my @authors;
+my $department_in_sum;
 
 my $skip;
 
@@ -37,7 +45,8 @@ my $sth_auth = $dbh->prepare(q{
 select
 	authid,
 	ExtractValue(marcxml,'//datafield[@tag="100"]/subfield[@code="a"]') as full_name,
-	ExtractValue(marcxml,'//datafield[@tag="680"]/subfield[@code="a"]') as department
+	ExtractValue(marcxml,'//datafield[@tag="680"]/subfield[@code="a"]') as department,
+	ExtractValue(marcxml,'//datafield[@tag="680"]/subfield[@code="i"]') as academic_title
 from auth_header
 });
 
@@ -50,13 +59,35 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 	$auth_header->{ $row->{authid} } = $row->{full_name};
 	$row->{department} =~ s/, Filozofski fakultet u Zagrebu.*$//;
 	$row->{department} =~ s/^.+\.\s*//;
-#	warn dump( $row );
+	$row->{department} =~ s/\s+$//s;
+	my $group;
+	foreach my $title ( keys %$azvo_group_title ) {
+		if ( $row->{academic_title} =~ $azvo_group_title->{$title} ) {
+			$group = $title;
+			last;
+		}
+	}
+	if ( $group ) {
+		$row->{academic_group} = $group;
+		$auth_group->{ $row->{authid} } = $group;
+		$skip->{group_stat}->{$group}++;
+	} else {
+		push @{ $skip->{no_academic_group} }, $row;
+	}
+
+	warn dump( $row );
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	push @authors, $row;
+	$department_in_sum->{ $row->{department} }++;
+}
 
+foreach my $department ( keys %$department_in_sum ) {
+	$department_in_sum->{$department} = 0 unless $department =~ m/(centar|croaticum|katedra|odsjek)/i;
 }
 
 debug 'auth_department' => $auth_department;
+debug 'auth_group' => $auth_group;
+debug 'department_in_sum' => $department_in_sum;
 
 
 my $authors;
@@ -151,6 +182,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	my $extract = {
 		'008' => undef,
 		'100' => '9',
+		'680' => 'i',
 		'700' => '(9|4)',
 		'942' => '(t|r|v)'
 	};
@@ -357,6 +389,7 @@ foreach my $department ( sort keys %$auth_department ) {
 		push @categories,  keys %{ $authors->{$authid}->{sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
+			push @{ $department_category_author->{''}->{$category} }, $authid if $department_in_sum->{$department};
 		}
 	}
 }
@@ -433,7 +466,6 @@ print $dep_fh qq|</ul>\n|, html_end;
 close($dep_fh);
 rename 'html/departments/index.new', 'html/departments/index.html';
 
-my $azvo_stat_authors;
 my $azvo_stat_biblio;
 
 foreach my $department ( sort keys %$department_category_author ) {
@@ -441,7 +473,6 @@ foreach my $department ( sort keys %$department_category_author ) {
 		foreach my $authid ( @{ $department_category_author->{$department}->{$category} } ) {
 			foreach my $type ( keys %{ $authors->{$authid} } ) {
 				next unless exists $authors->{$authid}->{$type}->{$category};
-				$azvo_stat_authors->{ $department }->{ $category }->{ $type } += $#{ $authors->{$authid}->{$type}->{$category} } + 1;
 				push @{ $azvo_stat_biblio->{ $department }->{ $category }->{ $type } },  @{ $authors->{$authid}->{$type}->{$category} };
 			}
 		}
@@ -453,7 +484,6 @@ foreach my $department ( sort keys %$department_category_author ) {
 	}
 }
 
-debug 'azvo_stat_authors' => $azvo_stat_authors;
 debug 'azvo_stat_biblio' => $azvo_stat_biblio;
 
 my @report_lines;
@@ -461,15 +491,15 @@ my @report_labels;
 
 my $label;
 my $sub_labels;
-open(my $report, '<', 'AZVO.txt');
+open(my $report, '<:encoding(utf-8)', 'AZVO.txt');
 while( <$report> ) {
 	chomp;
-	if ( /^(\w+)\t+(.+)/ ) {
+	if ( /^([^\t]+)\t+(.+)/ ) {
 		$label = $1;
 		push @report_labels, $label;
 		my $type = [ map { m/\s+/ ? [ split(/\s+/,$_) ] : [ $_, 'aut' ] } split (/\s*\+\s*/, $2) ];
 		push @report_lines, [ $label, @$type ];
-	} elsif ( /^\t+(\S+):\t+(\d+)(\w*)\t*(.*)$/ ) {
+	} elsif ( /^\t+([^\t]+):\t+(\d+)(\w*)\t*(.*)$/ ) {
 		push @{ $sub_labels->{$label} }, [ $1, $2, $3, $4 ];
 		my $sub_label = $1;
 		pop (@report_labels) if ( $report_labels[ $#report_labels ] =~ m/^$label$/ ); # remove partial name
@@ -483,13 +513,14 @@ debug 'report_lines', \@report_lines;
 debug 'sub_labels', $sub_labels;
 debug 'report_labels', \@report_labels;
 
-my @departments = sort keys %$azvo_stat_biblio;
+my @departments = ( sort { lc($a) cmp lc($b) } keys %$azvo_stat_biblio );
+
+debug 'departments' => \@departments;
 
 my $department2col;
 $department2col->{ $departments[$_] } = $_ foreach ( 0 .. $#departments );
 my $label2row;
 $label2row->{ $report_labels[$_] } = $_ foreach ( 0 .. $#report_labels );
-
 
 my $table;
 
@@ -502,8 +533,7 @@ sub table_count {
 	$table->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar keys %$unique;
 }
 
-foreach my $department ( keys %$azvo_stat_biblio ) {
-	my $dep_id = $#departments;
+foreach my $department ( @departments ) {
 	foreach my $line ( @report_lines ) {
 		my $label = $line->[0];
 		my @biblionumbers;
