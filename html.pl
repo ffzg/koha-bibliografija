@@ -75,7 +75,7 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 		push @{ $skip->{no_academic_group} }, $row;
 	}
 
-	warn "# ", dump( $row );
+#	warn "# ", dump( $row );
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	push @authors, $row;
 	$department_in_sum->{ $row->{department} }++;
