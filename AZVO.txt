@@ -1,13 +1,13 @@
-Znanstveni rad u časopisu			1.01 + 1.02 + 1.03
-	- CC, WoS, Scopus:					942r	^(Social Sciences Citation Index|Current Contents)
-	- ostale relevantne baze:		942r	.+
-	- nije u bazi:					942r
+Znanstveni rad u časopisu	1.01 + 1.02 + 1.03
+	- CC, WoS, Scopus:			942r	^(Social Sciences Citation Index|Current Contents)
+	- ostale relevantne baze:	942r	.+
+	- nije u bazi:				942r
 Autorska knjiga		2.01 + 2.01.1 + 2.02 + 2.03 + 2.04 + 2.06
-	- domaća:		008		^.{15}(ci|hrv)
-	- strana:		008		.+
+	- domaća:			008		^.{15}(ci|hr)
+	- strana:			008		.+
 Znanstveni rad sa skupa		1.06 + 1.08
 	- u bazama:				942r	.+
-	- nije u bazama:			942r
+	- nije u bazama:		942r
 Znanstveni rad sa skupa recenzija	1.06 + 1.08
 	- međunarodna:	942v	^Recenzija
 	- domaća:		942v	^DomRecenzija
