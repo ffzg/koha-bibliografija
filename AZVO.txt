@@ -1,20 +1,29 @@
-Znanstveni rad u časopisu	1.01 + 1.02 + 1.03
-	- CC, WoS, Scopus:			942r	^(Social Sciences Citation Index|Current Contents)
+Znanstveni rad u časopisu - ukupno	1.01 + 1.02 + 1.03
+Znanstveni rad u časopisu - baze	1.01 + 1.02 + 1.03
+	- CC, WoS, Scopus:			942r	^(CC|SCI|SSCI|A&CI|Scopus)
 	- ostale relevantne baze:	942r	.+
 	- nije u bazi:				942r
-Autorska knjiga		2.01 + 2.01.1 + 2.02 + 2.03 + 2.04 + 2.06
-	- domaća:			008		^.{15}(ci|hr)
-	- strana:			008		.+
-Znanstveni rad sa skupa		1.06 + 1.08
-	- u bazama:				942r	.+
-	- nije u bazama:		942r
-Znanstveni rad sa skupa recenzija	1.06 + 1.08
+Znanstveni rad sa skupa	recenzija	1.06 + 1.08
 	- međunarodna:	942v	^Recenzija
 	- domaća:		942v	^DomRecenzija
 	- nema:			942v	^(Nema|.+)
+Znanstveni rad poglavlje u knjizi	1.16.1 + 1.16.2
+Znanstveni radovi ukupno			1.01 + 1.02 + 1.03 + 1.06 + 1.08 + 1.16.1 + 1.16.2
 Stručni rad u časopisu				1.04
 Stručni rad sa skupa				1.07 + 1.09
-Poglavlje u knjizi znanstveni rad	1.16.1 + 1.16.2
-Poglavlje u knjizi stručni rad		1.17
+Stručni rad, poglavlje u knjizi		1.17
+Stručni rad ukupno					1.04 + 1.07 + 1.09 + 1.17
+Autorska knjiga		2.01 + 2.01.1 + 2.02 + 2.03 + 2.04 + 2.06 + 2.25
+	- domaća:			008		^.{15}(ci|hr)
+	- strana:			008		.+
 Urednička knjiga	2.01 edt + 2.02 edt + 2.03 edt + 2.06 edt + 2.25 edt
+	- domaća:			008		^.{15}(ci|hr)
+	- strana:			008		.+
 Prijevod knjige		2.01 trl + 2.02 trl + 2.03 trl + 2.06 trl + 2.25 trl + 2.50 trl + 2.50.1 trl + 2.50.2 trl
+Prijevod znanstvenog članka		1.01 trl + 1.01 trl + 1.03 trl
+Prijevod stručnog članka		1.04 trl
+Prijevod znanstvenog rada s konferencije	1.06 trl + 1.08 trl
+Prijevod stručnog članka s konferencije		1.07 trl + 1.09 trl
+Prijevod poglavlja u knjizi (znanstveni rad)	1.16.1 trl
+Prijevod poglavlja u knjizi (stručni rad)		1.17 trl
+Prijevod umjetničkog djela (članak)				1.23 trl
