@@ -27,3 +27,5 @@ Prijevod stručnog članka s konferencije		1.07 trl + 1.09 trl
 Prijevod poglavlja u knjizi (znanstveni rad)	1.16.1 trl
 Prijevod poglavlja u knjizi (stručni rad)		1.17 trl
 Prijevod umjetničkog djela (članak)				1.23 trl
+Kritički prijevod (poglavlje, članak)	1.50.1
+Kritički prijevod (knjiga)				2.50.1
