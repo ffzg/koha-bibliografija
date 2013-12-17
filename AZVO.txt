@@ -1,6 +1,6 @@
 Znanstveni rad u časopisu - ukupno	1.01 + 1.02 + 1.03
 Znanstveni rad u časopisu - baze	1.01 + 1.02 + 1.03
-	- CC, WoS, Scopus:			942r	^(CC|SCI|SSCI|A&CI|Scopus)
+	- CC, WoS, Scopus:			942r	(CC|SCI|SSCI|A&CI|Scopus)
 	- ostale relevantne baze:	942r	.+
 	- nije u bazi:				942r
 Znanstveni rad sa skupa	recenzija	1.06 + 1.08
@@ -19,13 +19,7 @@ Autorska knjiga		2.01 + 2.01.1 + 2.02 + 2.03 + 2.04 + 2.06 + 2.25
 Urednička knjiga	2.01 edt + 2.02 edt + 2.03 edt + 2.06 edt + 2.25 edt
 	- domaća:			008		^.{15}(ci|hr)
 	- strana:			008		.+
-Prijevod knjige		2.01 trl + 2.02 trl + 2.03 trl + 2.06 trl + 2.25 trl + 2.50 trl + 2.50.1 trl + 2.50.2 trl
-Prijevod znanstvenog članka		1.01 trl + 1.01 trl + 1.03 trl
-Prijevod stručnog članka		1.04 trl
-Prijevod znanstvenog rada s konferencije	1.06 trl + 1.08 trl
-Prijevod stručnog članka s konferencije		1.07 trl + 1.09 trl
-Prijevod poglavlja u knjizi (znanstveni rad)	1.16.1 trl
-Prijevod poglavlja u knjizi (stručni rad)		1.17 trl
-Prijevod umjetničkog djela (članak)				1.23 trl
-Kritički prijevod (poglavlje, članak)	1.50.1
-Kritički prijevod (knjiga)				2.50.1
+Prijevod knjige		2.01 trl + 2.02 trl + 2.03 trl + 2.06 trl + 2.25 trl + 2.50 trl + 2.50.1 trl + 2.50.2 trl + 2.50.3 trl
+Prijevod članka	ili poglavlja	1.01 trl + 1.01 trl + 1.03 trl + 1.04 trl + 1.06 trl + 1.08 trl + 1.07 trl + 1.09 trl + 1.16 trl + 1.16.1 trl + 1.16.2 trl + 1.17 trl + 1.23 trl + 1.50.1 trl
+Kritičko izdanje (knjiga)				2.50.1 + 2.01.1
+Kritičko izdanje (poglavlje, članak)	1.50.1

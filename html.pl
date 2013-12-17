@@ -33,11 +33,17 @@ my $azvo_group_title = {
 'asistenti i novaci' => qr/(asistent|novak)/i,
 };
 
+my $department_groups = {
+'ZZA_humanističke'		=> qr/(anglistiku|arheologiju|antropologiju|filozofiju|fonetiku|germanistiku|hungarologiju|indologiju|slavenske|filologiju|komparativnu|kroatistiku|lingvistiku|povijest|romanistiku|talijanistiku)/i,
+'ZZB_društvene'			=> qr/(informacijske|pedagogiju|psihologiju|sociologiju)/i,
+};
+
 my $auth_header;
 my $auth_department;
 my $auth_group;
 my @authors;
 my $department_in_sum;
+my $department_in_group;
 
 my $skip;
 
@@ -79,7 +85,16 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	push @authors, $row;
 	$department_in_sum->{ $row->{department} }++;
+	foreach my $name ( keys %$department_groups ) {
+		my $regex = $department_groups->{$name};
+		if ( $row->{department} =~ $regex ) {
+			$department_in_group->{ $row->{department} } = $name;
+			last;
+		}
+	}
 }
+
+debug 'department_in_group' => $department_in_group;
 
 foreach my $department ( keys %$department_in_sum ) {
 	$department_in_sum->{$department} = 0 unless $department =~ m/(centar|croaticum|katedra|odsjek)/i;
@@ -389,7 +404,12 @@ foreach my $department ( sort keys %$auth_department ) {
 		push @categories,  keys %{ $authors->{$authid}->{sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
-			push @{ $department_category_author->{''}->{$category} }, $authid if $department_in_sum->{$department};
+			push @{ $department_category_author->{'ZZZ_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
+			if ( my $group = $department_in_group->{ $department } ) {
+				push @{ $department_category_author->{$group}->{$category} }, $authid;
+			} else {
+				$skip->{'department_not_in_group'}->{ $department }++;
+			}
 		}
 	}
 }
