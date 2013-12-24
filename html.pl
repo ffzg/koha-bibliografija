@@ -34,8 +34,8 @@ my $azvo_group_title = {
 };
 
 my $department_groups = {
-'ZZA_humanističke'		=> qr/(anglistiku|arheologiju|antropologiju|filozofiju|fonetiku|germanistiku|hungarologiju|indologiju|slavenske|filologiju|komparativnu|kroatistiku|lingvistiku|povijest|romanistiku|talijanistiku)/i,
-'ZZB_društvene'			=> qr/(informacijske|pedagogiju|psihologiju|sociologiju)/i,
+'AAA_humanističke'		=> qr/(anglistiku|arheologiju|antropologiju|filozofiju|fonetiku|germanistiku|hungarologiju|indologiju|slavenske|filologiju|komparativnu|kroatistiku|lingvistiku|povijest|romanistiku|talijanistiku)/i,
+'AAB_društvene'			=> qr/(informacijske|pedagogiju|psihologiju|sociologiju)/i,
 };
 
 my $auth_header;
@@ -404,7 +404,7 @@ foreach my $department ( sort keys %$auth_department ) {
 		push @categories,  keys %{ $authors->{$authid}->{sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
-			push @{ $department_category_author->{'ZZZ_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
+			push @{ $department_category_author->{'AAZ_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
 			if ( my $group = $department_in_group->{ $department } ) {
 				push @{ $department_category_author->{$group}->{$category} }, $authid;
 			} else {
