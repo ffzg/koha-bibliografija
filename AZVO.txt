@@ -1,25 +1,39 @@
-Znanstveni rad u časopisu - ukupno	1.01 + 1.02 + 1.03
-Znanstveni rad u časopisu - baze	1.01 + 1.02 + 1.03
+Ukupan broj znanstvenih radova u časopisima			1.01 + 1.02 + 1.03
+Znanstveni rad u časopisu zastupljeni u bazama 		1.01 + 1.02 + 1.03
 	- CC, WoS, Scopus:			942r	(CC|SCI|SSCI|A&CI|Scopus)
 	- ostale relevantne baze:	942r	.+
 	- nije u bazi:				942r
+Znanstveni radovi domaći ili strani		1.01 + 1.02 + 1.03
+	- domaći:			008		^.{15}(ci|hr)
+	- strani:			008		.+
 Znanstveni rad sa skupa	recenzija	1.06 + 1.08
-	- međunarodna:	942v	^Recenzija
-	- domaća:		942v	^DomRecenzija
-	- nema:			942v	^(Nema|.+)
-Znanstveni rad poglavlje u knjizi	1.16.1 + 1.16.2
+	- međunarodna:				942v	^(Recenzija|Me|me|rec)
+	- domaća:					942v	^Dom
+	- nema recenziju:			942v	^Nista
+	- nema podatak:				942v
+Znastveni rad kao poglavlje u knjizi	1.16.1 + 1.16.2
 Znanstveni radovi ukupno			1.01 + 1.02 + 1.03 + 1.06 + 1.08 + 1.16.1 + 1.16.2
 Stručni rad u časopisu				1.04
+Stručni radovi u bazama 		1.04
+	- CC, WoS, Scopus:			942r	(CC|SCI|SSCI|A&CI|Scopus)
+	- ostale relevantne baze:	942r	.+
+	- nije u bazi:				942r
+Stručni radovi u domaćim časopisima		1.04
+	- domaći:			008		^.{15}(ci|hr)
+	- strani:			008		.+
 Stručni rad sa skupa				1.07 + 1.09
-Stručni rad, poglavlje u knjizi		1.17
-Stručni rad ukupno					1.04 + 1.07 + 1.09 + 1.17
-Autorska knjiga		2.01 + 2.01.1 + 2.02 + 2.03 + 2.04 + 2.06 + 2.25
+Stručni rad, poglavlje u knjizi		1.17 + 1.16
+Ostali stručni radovi (natuknica u enciklopediji; recenzija, prikaz ili kritika; predgovor ili pogovor; polemika; intervju)	1.18 + 1.19 + 1.20 + 1.21 + 1.22
+Ukupan broj stručnih radova (časopisi, skupovi, poglavlja u knjizi i ostalo)	1.04 + 1.07 + 1.09 + 1.17 + 1.16 + 1.18 + 1.19 + 1.20 + 1.21 + 1.22
+Ukupan broj autorskih knjiga	2.01 + + 2.02 + 2.03 + 2.04 + 2.05 + 2.06 + 2.07 + 2.16 + 2.25
+Autorska knjiga		2.01 + + 2.02 + 2.03 + 2.04 + 2.05 + 2.06 + 2.07 + 2.16 + 2.25
 	- domaća:			008		^.{15}(ci|hr)
 	- strana:			008		.+
-Urednička knjiga	2.01 edt + 2.02 edt + 2.03 edt + 2.06 edt + 2.25 edt
+Ukupan broj uredničkih knjiga	2.01 edt + 2.02 edt + 2.03 edt + 2.04 edt + 2.05 edt + 2.06 edt + 2.07 edt + 2.25 edt + 2.02 com
+Urednička knjiga	2.01 edt + 2.02 edt + 2.03 edt + 2.04 edt + 2.05 edt + 2.06 edt + 2.07 edt + 2.25 edt + 2.02 com
 	- domaća:			008		^.{15}(ci|hr)
 	- strana:			008		.+
-Prijevod knjige		2.01 trl + 2.02 trl + 2.03 trl + 2.06 trl + 2.25 trl + 2.50 trl + 2.50.1 trl + 2.50.2 trl + 2.50.3 trl
-Prijevod članka	ili poglavlja	1.01 trl + 1.01 trl + 1.03 trl + 1.04 trl + 1.06 trl + 1.08 trl + 1.07 trl + 1.09 trl + 1.16 trl + 1.16.1 trl + 1.16.2 trl + 1.17 trl + 1.23 trl + 1.50.1 trl
-Kritičko izdanje (knjiga)				2.50.1 + 2.01.1
-Kritičko izdanje (poglavlje, članak)	1.50.1
+Prijevod knjige		2.01 trl + 2.02 trl + 2.03 trl + 2.04 trl + 2.05 trl + 2.06 trl + 2.07 trl + 2.16 trl + 2.17 trl + 2.25 trl + 2.31 trl + 2.32 trl + 2.50 trl + 2.50.2 trl + 2.50.3 trl
+Prijevod članka, poglavlja	1.01 trl + 1.02 trl + 1.03 trl + 1.04 trl 1.05 trl + 1.07 trl + 1.06 trl + 1.08 trl + 1.09 trl + 1.16 trl + 1.16.1 trl + 1.16.2 trl + 1.17 trl + 1.19 trl + 1.20 trl + 1.23 trl + 1.25 trl + 1.50 trl + 1.50.2 trl
+Kritički prijevod/izdanje (knjiga)				2.50.1 trl + 2.50.1 com + 2.50.1 + 2.01.1 trl + 2.01.1 com + 2.01.1
+Kritički prijevod/izdanje (poglavlje, članak)	1.50.1 trl + 1.50.1 com + 1.50.1
