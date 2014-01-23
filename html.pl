@@ -33,11 +33,17 @@ my $azvo_group_title = {
 'asistenti i novaci' => qr/(asistent|novak)/i,
 };
 
+my $department_groups = {
+'AAA_humanističke'		=> qr/(anglistiku|arheologiju|antropologiju|filozofiju|fonetiku|germanistiku|hungarologiju|indologiju|slavenske|filologiju|komparativnu|kroatistiku|lingvistiku|povijest|romanistiku|talijanistiku)/i,
+'AAB_društvene'			=> qr/(informacijske|pedagogiju|psihologiju|sociologiju)/i,
+};
+
 my $auth_header;
 my $auth_department;
 my $auth_group;
 my @authors;
 my $department_in_sum;
+my $department_in_group;
 
 my $skip;
 
@@ -79,7 +85,16 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 	push @{ $auth_department->{ $row->{department} } }, $row->{authid};
 	push @authors, $row;
 	$department_in_sum->{ $row->{department} }++;
+	foreach my $name ( keys %$department_groups ) {
+		my $regex = $department_groups->{$name};
+		if ( $row->{department} =~ $regex ) {
+			$department_in_group->{ $row->{department} } = $name;
+			last;
+		}
+	}
 }
+
+debug 'department_in_group' => $department_in_group;
 
 foreach my $department ( keys %$department_in_sum ) {
 	$department_in_sum->{$department} = 0 unless $department =~ m/(centar|croaticum|katedra|odsjek)/i;
@@ -124,6 +139,7 @@ my $parsed = $xslt->parse_stylesheet($style_doc);
 my $biblio_html;
 my $biblio_parsed;
 my $biblio_data;
+my $biblio_author_external;
 
 open(my $xml_fh, '>', '/tmp/bibliografija.xml') if $ENV{XML};
 
@@ -181,9 +197,9 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 	my $extract = {
 		'008' => undef,
-		'100' => '9',
+		'100' => '(9|a)',
 		'680' => 'i',
-		'700' => '(9|4)',
+		'700' => '(9|4|a)',
 		'942' => '(t|r|v)'
 	};
 
@@ -243,7 +259,19 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	my $have_100 = 1;
 
 	if ( exists $data->{100} ) {
-			my @first_author = map { $_->{'9'} } @{ $data->{100} };
+			my @first_author =
+				map { $_->{'9'} }
+				grep {
+					if ( ! exists $_->{9} ) {
+						$biblio_author_external->{ $row->{biblionumber} }++;
+						0;
+					} elsif ( exists $auth_header->{ $_->{9} } ) {
+						1; # from FFZXG
+					} else {
+						0;
+					}
+				}
+				@{ $data->{100} };
 			foreach my $authid ( @first_author ) {
 				push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
 			}
@@ -254,7 +282,19 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	my $have_edt;
 
 	if ( exists $data->{700} ) {
-			foreach my $auth ( @{ $data->{700} } ) {
+			my @other_authors =
+				grep {
+					if ( ! exists $_->{9} ) {
+						$biblio_author_external->{ $row->{biblionumber} }++;
+						0;
+					} elsif ( exists $auth_header->{ $_->{9} } ) {
+						1; # from FFZXG
+					} else {
+						0;
+					}
+				}
+				@{ $data->{700} };
+			foreach my $auth ( @other_authors ) {
 				my $authid = $auth->{9} || next;
 				my $type   = $auth->{4} || next; #die "no 4 in ",dump($data);
 
@@ -291,6 +331,7 @@ debug 'type_stats' => $type_stats;
 debug 'skip' => $skip;
 debug 'biblio_year' => $biblio_year;
 debug 'biblio_data' => $biblio_data;
+debug 'biblio_author_external' => $biblio_author_external;
 
 my $category_label;
 my $sth_categories = $dbh->prepare(q{
@@ -391,7 +432,12 @@ foreach my $department ( sort keys %$auth_department ) {
 		push @categories,  keys %{ $authors->{$authid}->{sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
-			push @{ $department_category_author->{''}->{$category} }, $authid if $department_in_sum->{$department};
+			push @{ $department_category_author->{'AAZ_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
+			if ( my $group = $department_in_group->{ $department } ) {
+				push @{ $department_category_author->{$group}->{$category} }, $authid;
+			} else {
+				$skip->{'department_not_in_group'}->{ $department }++;
+			}
 		}
 	}
 }
@@ -540,7 +586,9 @@ sub table_count {
 	my @biblionumbers = @_;
 	my $unique;
 	$unique->{$_}++ foreach @biblionumbers;
-	$table->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar keys %$unique;
+	my @bibs = keys %$unique;
+	$table->{ffzg}->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar @bibs;
+	$table->{external}->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar grep { $biblio_author_external->{$_} } @bibs;
 }
 
 foreach my $group ( '', keys %$azvo_group_title ) {
@@ -592,29 +640,43 @@ foreach my $department ( @departments ) {
 debug 'table', $table;
 
 open(my $fh, '>:encoding(utf-8)', 'html/azvo.new');
+open(my $fh2, '>:encoding(utf-8)', 'html/azvo2.new');
 
-print $fh html_title('AZVO tablica');
+sub print_fh {
+	print $fh @_;
+	print $fh2 @_;
+}
 
-foreach my $group ( keys %$table ) {
+print $fh html_title('AZVO tablica - FFZG');
+print $fh2 html_title('AZVO tablica - kolaboracija sa FFZG');
 
-		print $fh "<h1>$group</h1>" if $group;
+foreach my $group ( keys %{ $table->{ffzg} } ) {
 
-		print $fh "<table border=1>\n";
-		print $fh "<tr><th></th>";
-		print $fh "<th>$_</th>" foreach @departments;
-		print $fh "</tr>\n";
+		print_fh "<h1>$group</h1>" if $group;
 
-		foreach my $row ( 0 .. $#{ $table->{$group} } ) {
-			print $fh "<tr><th>", $report_labels[$row], "</th>\n";
-			print $fh " <td>", $table->{$group}->[ $row ]->[ $_ ] || '', "</td>\n" foreach 0 .. $#departments;
-			print $fh "</tr>\n";
+		print_fh "<table border=1>\n";
+		print_fh "<tr><th></th>";
+		print_fh "<th>$_</th>" foreach @departments;
+		print_fh "</tr>\n";
+
+		foreach my $row ( 0 .. $#{ $table->{ffzg}->{$group} } ) {
+			print_fh "<tr><th>", $report_labels[$row], "</th>\n";
+ 			foreach ( 0 .. $#departments ) {
+				print_fh "<td>";
+				print $fh $table->{ffzg}->{$group}->[ $row ]->[ $_ ] || '';
+				print $fh2 $table->{external}->{$group}->[ $row ]->[ $_ ] || '';
+				print_fh "</td>\n"
+			}
+			print_fh "</tr>\n";
 		}
 
-		print $fh "</table>\n";
+		print_fh "</table>\n";
 
 } # group
 
-print $fh html_end;
+print_fh html_end;
 close($fh);
+close($fh2);
 rename 'html/azvo.new', 'html/azvo.html';
+rename 'html/azvo2.new', 'html/azvo2.html';
 
