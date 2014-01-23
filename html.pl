@@ -218,10 +218,12 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 				}
 			}
 			push @{ $data->{$tag} }, $sf_data if $sf_data;
-        }
-    }
+		}
+	}
 
-	if ( $data->{year} < 2008 ) {
+	if ( ! defined $data->{year} ) {
+		warn "MISSING year in ", $row->{biblionumber};
+	} elsif ( $data->{year} < 2008 ) {
 		push @{ $skip->{year_lt_2008} }, $row->{biblionumber};
 		next;
 	} elsif ( $data->{year} > 2013 ) {
