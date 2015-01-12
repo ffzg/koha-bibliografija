@@ -239,12 +239,14 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 	if ( ! defined $data->{year} ) {
 		warn "MISSING year in ", $row->{biblionumber};
+=for remove-year-limit
 	} elsif ( $data->{year} < 2008 ) {
 		push @{ $skip->{year_lt_2008} }, $row->{biblionumber};
 		next;
 	} elsif ( $data->{year} > 2013 ) {
 		push @{ $skip->{year_gt_2013} }, $row->{biblionumber};
 		next;
+=cut
 	}
 
 #	warn "# ", $row->{biblionumber}, " data ",dump($data);
@@ -409,7 +411,7 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	my $path = "html/$row->{authid}";
 	open(my $fh, '>:encoding(utf-8)', "$path.new");
 	print $fh html_title($row->{full_name}, "bibliografija");
-	print $fh qq|<h1>$row->{full_name} - bibliografija za razdoblje 2008-2013</h1>|;
+	print $fh qq|<h1>$row->{full_name} - bibliografija</h1>|;
 
 	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
 	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, krička izdanja' );
