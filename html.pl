@@ -387,7 +387,9 @@ sub author_html {
 	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
 		my $label = $category_label->{$category} || 'Bez kategorije';
 		print $fh qq|<h3>$label</h3>\n<ul>\n|;
-		foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
+		foreach my $biblionumber ( sort {
+				$biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b
+			} @{ $authors->{$authid}->{$type}->{$category} } ) {
 			print $fh li_biblio( $biblionumber );
 		}
 		print $fh qq|</ul>\n|;
