@@ -12,6 +12,7 @@ use locale;
 use Text::Unaccent;
 use Carp qw(confess);
 use utf8;
+use JSON;
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
@@ -352,6 +353,7 @@ sub html_title {
 <meta charset="UTF-8">
 <title>|, join(" ", @_), qq|</title>
 <link href="style.css" type="text/css" rel="stylesheet" />
+<script src="//code.jquery.com/jquery-1.11.2.js"></script>
 </head>
 <body>
 |;
@@ -372,7 +374,7 @@ debug 'authors' => \@authors;
 
 sub li_biblio {
 	my ($biblionumber) = @_;
-	return qq|<li>|,
+	return qq|<li class="y|, $biblio_year->{$biblionumber}, qq|">|,
 		qq|<a href="https://koha.ffzg.hr/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber">$biblionumber</a>|,
 		biblioitem_html($biblionumber),
 		qq|<a href="https://koha.ffzg.hr:8443/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=$biblionumber">edit</a>|,
@@ -388,7 +390,7 @@ sub author_html {
 
 	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<h3>$label</h3>\n<ul>\n|;
+		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ul>\n|;
 		foreach my $biblionumber ( sort {
 				$biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b
 			} @{ $authors->{$authid}->{$type}->{$category} } ) {
@@ -396,6 +398,19 @@ sub author_html {
 		}
 		print $fh qq|</ul>\n|;
 	}
+}
+
+sub count_author_years {
+	my ($authid) = @_;
+	my $years;
+	foreach my $type ( keys %{ $authors->{$authid} } ) {
+		foreach my $category ( keys %{ $authors->{$authid}->{$type} } ) {
+			foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
+				$years->{ $biblio_year->{ $biblionumber } }->{ $type . '-' . $category }++;
+			}
+		}
+	}
+	return $years;
 }
 
 foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
@@ -412,6 +427,48 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	open(my $fh, '>:encoding(utf-8)', "$path.new");
 	print $fh html_title($row->{full_name}, "bibliografija");
 	print $fh qq|<h1>$row->{full_name} - bibliografija</h1>|;
+
+	my $years = count_author_years( $row->{authid} );
+	print $fh qq|<span id="years">Godine:|;
+	my $type_cat_count = {};
+	foreach my $year ( sort { $b <=> $a } keys %$years ) {
+		print $fh qq|<label><input type=checkbox onClick="toggle_year($year, this)" checked>$year</label>&nbsp;\n|;
+		foreach my $type_cat ( keys %{ $years->{$year} } ) {
+			$type_cat_count->{ $type_cat } += $years->{$year}->{$type_cat};
+		}
+	}
+	print $fh qq|</span>|;
+
+	print $fh q|
+<script>
+
+var years = |, encode_json($years), q|;
+
+var type_cat_count = |, encode_json($type_cat_count), q|;
+
+function toggle_year(year, el) {
+	if ( el.checked ) {
+		$('.y'+year).show();
+		console.debug('show', year, el.checked);
+		for(var type_cat in years[year]) {
+			if ( ( type_cat_count[ type_cat ] += years[year][type_cat] ) == years[year][type_cat]) {
+				$('a[name="'+type_cat+'"]').show();
+				console.debug(type_cat, 'show');
+			}
+		}
+	} else {
+		$('.y'+year).hide();
+		console.debug('hide', year, el.checked);
+		for(var type_cat in years[year]) {
+			if ( ( type_cat_count[ type_cat ] -= years[year][type_cat] ) == 0 ) {
+				$('a[name="'+type_cat+'"]').hide();
+				console.debug(type_cat, 'hide');
+			}
+		}
+	}
+}
+</script>
+	|;
 
 	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
 	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, krička izdanja' );
