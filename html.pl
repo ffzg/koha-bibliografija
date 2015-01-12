@@ -28,14 +28,14 @@ sub debug {
 my $xslfilename = 'compact.xsl';
 
 my $azvo_group_title = {
-'znanstveno nastavni' => qr/(profesor|docent|znanstveni)/i,
+'znanstveno nastavni' => qr/(profes|docent|znanstveni savjetnik|znanstveni suradnik)/i,
 'lektori i predavači' => qr/(lektor|predavač)/i,
 'asistenti i novaci' => qr/(asistent|novak)/i,
 };
 
 my $department_groups = {
-'AAA_humanističke'		=> qr/(anglistiku|arheologiju|antropologiju|filozofiju|fonetiku|germanistiku|hungarologiju|indologiju|slavenske|filologiju|komparativnu|kroatistiku|lingvistiku|povijest|romanistiku|talijanistiku)/i,
-'AAB_društvene'			=> qr/(informacijske|pedagogiju|psihologiju|sociologiju)/i,
+'AAB_humanističke'		=> qr/(anglistiku|arheologiju|antropologiju|filozofiju|fonetiku|germanistiku|hungarologiju|indologiju|slavenske|filologiju|komparativnu|kroatistiku|lingvistiku|povijest|romanistiku|talijanistiku)/i,
+'AAC_društvene'			=> qr/(informacijske|pedagogiju|psihologiju|sociologiju)/i,
 };
 
 my $auth_header;
@@ -432,7 +432,7 @@ foreach my $department ( sort keys %$auth_department ) {
 		push @categories,  keys %{ $authors->{$authid}->{sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
-			push @{ $department_category_author->{'AAZ_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
+			push @{ $department_category_author->{'AAA_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
 			if ( my $group = $department_in_group->{ $department } ) {
 				push @{ $department_category_author->{$group}->{$category} }, $authid;
 			} else {
