@@ -426,17 +426,23 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	my $path = "html/$row->{authid}";
 	open(my $fh, '>:encoding(utf-8)', "$path.new");
 	print $fh html_title($row->{full_name}, "bibliografija");
-	print $fh qq|<h1>$row->{full_name} - bibliografija</h1>|;
+	print $fh qq|<h1>$row->{full_name} - bibliografija</h1>\n|;
 
 	my $years = count_author_years( $row->{authid} );
-	print $fh qq|<span id="years">Godine:|;
+	print $fh qq|<span id="years">Godine:\n|;
 	my $type_cat_count = {};
 	foreach my $year ( sort { $b <=> $a } keys %$years ) {
-		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked>$year</label>&nbsp;\n|;
+		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked="checked">$year</label>&nbsp;\n|;
 		foreach my $type_cat ( keys %{ $years->{$year} } ) {
 			$type_cat_count->{ $type_cat } += $years->{$year}->{$type_cat};
 		}
 	}
+
+	print $fh qq|
+<input type=button value="all" onClick="all_years(1)">
+<input type=button value="none" onClick="all_years(0)">
+	|;
+
 	print $fh qq|</span>|;
 
 	print $fh q|
@@ -474,6 +480,22 @@ function toggle_year(year, el) {
 	} else {
 		year_hide(year);
 	}
+}
+
+function all_years( turn_on ) {
+	$('input[name=year_selection]').each( function(i,el) {
+		if ( turn_on ) {
+			if ( ! el.checked ) {
+				el.checked = true;
+				year_show( el.value );
+			}
+		} else {
+			if ( el.checked ) {
+				el.checked = false;
+				year_hide( el.value );
+			}
+		}
+	} );
 }
 
 $(document).ready( function() {
