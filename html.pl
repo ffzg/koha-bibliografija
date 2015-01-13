@@ -432,7 +432,7 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	print $fh qq|<span id="years">Godine:|;
 	my $type_cat_count = {};
 	foreach my $year ( sort { $b <=> $a } keys %$years ) {
-		print $fh qq|<label><input type=checkbox onClick="toggle_year($year, this)" checked>$year</label>&nbsp;\n|;
+		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked>$year</label>&nbsp;\n|;
 		foreach my $type_cat ( keys %{ $years->{$year} } ) {
 			$type_cat_count->{ $type_cat } += $years->{$year}->{$type_cat};
 		}
@@ -446,27 +446,46 @@ var years = |, encode_json($years), q|;
 
 var type_cat_count = |, encode_json($type_cat_count), q|;
 
-function toggle_year(year, el) {
-	if ( el.checked ) {
-		$('.y'+year).show();
-		console.debug('show', year, el.checked);
-		for(var type_cat in years[year]) {
-			if ( ( type_cat_count[ type_cat ] += years[year][type_cat] ) == years[year][type_cat]) {
-				$('a[name="'+type_cat+'"]').show();
-				console.debug(type_cat, 'show');
-			}
-		}
-	} else {
-		$('.y'+year).hide();
-		console.debug('hide', year, el.checked);
-		for(var type_cat in years[year]) {
-			if ( ( type_cat_count[ type_cat ] -= years[year][type_cat] ) == 0 ) {
-				$('a[name="'+type_cat+'"]').hide();
-				console.debug(type_cat, 'hide');
-			}
+function year_show(year) {
+	$('.y'+year).show();
+	console.debug('show', year);
+	for(var type_cat in years[year]) {
+		if ( ( type_cat_count[ type_cat ] += years[year][type_cat] ) == years[year][type_cat]) {
+			$('a[name="'+type_cat+'"]').show();
+			console.debug(type_cat, 'show');
 		}
 	}
 }
+
+function year_hide(year) {
+	$('.y'+year).hide();
+	console.debug('hide', year);
+	for(var type_cat in years[year]) {
+		if ( ( type_cat_count[ type_cat ] -= years[year][type_cat] ) == 0 ) {
+			$('a[name="'+type_cat+'"]').hide();
+			console.debug(type_cat, 'hide');
+		}
+	}
+}
+
+function toggle_year(year, el) {
+	if ( el.checked ) {
+		year_show(year);
+	} else {
+		year_hide(year);
+	}
+}
+
+$(document).ready( function() {
+	console.info('ready');
+
+	$('input[name=year_selection]').each( function(i, el) {
+		var year = el.value;
+		console.debug( 'on load', year, el.checked );
+		if (! el.checked) year_hide(year);
+	});
+
+});
 </script>
 	|;
 
