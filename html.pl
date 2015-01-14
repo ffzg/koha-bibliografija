@@ -13,6 +13,7 @@ use Text::Unaccent;
 use Carp qw(confess);
 use utf8;
 use JSON;
+use POSIX qw(strftime);
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
@@ -360,7 +361,10 @@ sub html_title {
 }
 
 sub html_end {
-	return qq|</body>\n</html>\n|;
+	return
+		qq|<small style="color:gray">Zadnji puta osvježeno: |,
+		strftime("%Y-%m-%d %H:%M:%S\n", localtime()),
+		qq|</body>\n</html>\n|;
 }
 
 mkdir 'html' unless -d 'html';
