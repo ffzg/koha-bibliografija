@@ -405,8 +405,8 @@ sub author_html {
 }
 
 sub count_author_years {
+	my $years = shift;
 	my ($authid) = @_;
-	my $years;
 	foreach my $type ( keys %{ $authors->{$authid} } ) {
 		foreach my $category ( keys %{ $authors->{$authid}->{$type} } ) {
 			foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
@@ -417,24 +417,18 @@ sub count_author_years {
 	return $years;
 }
 
-foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
+sub html_year_selection {
+	my $fh = shift;
+	my @authids = @_;
 
-	my $first = substr( $row->{full_name}, 0, 1 );
-	if ( $first ne $first_letter ) {
-		print $index qq{</ul>\n} if $first_letter;
-		$first_letter = $first;
-		print $index qq{<h1>$first</h1>\n<ul>\n};
-	}
-	print $index qq{<li><a href="}, $row->{authid}, qq{.html">}, $row->{full_name}, "</a></li>\n";
-
-	my $path = "html/$row->{authid}";
-	open(my $fh, '>:encoding(utf-8)', "$path.new");
-	print $fh html_title($row->{full_name}, "bibliografija");
-	print $fh qq|<h1>$row->{full_name} - bibliografija</h1>\n|;
-
-	my $years = count_author_years( $row->{authid} );
 	print $fh qq|<span id="years">Godine:\n|;
 	my $type_cat_count = {};
+	my $years;
+
+	foreach my $authid ( @authids ) {
+		$years = count_author_years( $years, $authid );
+	}
+
 	foreach my $year ( sort { $b <=> $a } keys %$years ) {
 		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked="checked">$year</label>&nbsp;\n|;
 		foreach my $type_cat ( keys %{ $years->{$year} } ) {
@@ -514,6 +508,24 @@ $(document).ready( function() {
 });
 </script>
 	|;
+}
+
+foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
+
+	my $first = substr( $row->{full_name}, 0, 1 );
+	if ( $first ne $first_letter ) {
+		print $index qq{</ul>\n} if $first_letter;
+		$first_letter = $first;
+		print $index qq{<h1>$first</h1>\n<ul>\n};
+	}
+	print $index qq{<li><a href="}, $row->{authid}, qq{.html">}, $row->{full_name}, "</a></li>\n";
+
+	my $path = "html/$row->{authid}";
+	open(my $fh, '>:encoding(utf-8)', "$path.new");
+	print $fh html_title($row->{full_name}, "bibliografija");
+	print $fh qq|<h1>$row->{full_name} - bibliografija</h1>\n|;
+
+	html_year_selection $fh => $row->{authid};
 
 	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
 	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, krička izdanja' );
