@@ -385,6 +385,13 @@ sub li_biblio {
 		qq|</li>\n|;
 }
 
+sub unique_biblionumber {
+	my @v = @_;
+	my $u;
+	$u->{$_}++ foreach @v;
+	return sort { $biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b } keys %$u;
+}
+
 sub author_html {
 	my ( $fh, $authid, $type, $label ) = @_;
 
@@ -395,14 +402,13 @@ sub author_html {
 	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
 		my $label = $category_label->{$category} || 'Bez kategorije';
 		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ul>\n|;
-		foreach my $biblionumber ( sort {
-				$biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b
-			} @{ $authors->{$authid}->{$type}->{$category} } ) {
+		foreach my $biblionumber ( unique_biblionumber @{ $authors->{$authid}->{$type}->{$category} } ) {
 			print $fh li_biblio( $biblionumber );
 		}
 		print $fh qq|</ul>\n|;
 	}
 }
+
 
 sub count_author_years {
 	my $years = shift;
@@ -562,14 +568,33 @@ foreach my $department ( sort keys %$auth_department ) {
 
 debug 'department_category_author' => $department_category_author;
 
-mkdir 'html/departments' unless -d 'html/departments';
 
-sub unique_biblionumber {
-	my @v = @_;
-	my $u;
-	$u->{$_}++ foreach @v;
-	return sort { $biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b } keys %$u;
+sub department_html {
+	my ( $fh, $department, $type, $label ) = @_;
+
+	print $fh qq|<h2>$label</h2>\n|;
+
+	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
+
+		my @authids = @{ $department_category_author->{$department}->{$category} };
+		next unless @authids;
+
+		my @biblionumber = unique_biblionumber map { @{ $authors->{$_}->{$type}->{$category} } } grep { exists $authors->{$_}->{$type}->{$category} } @authids;
+
+		next unless @biblionumber;
+
+ 		my $label = $category_label->{$category} || 'Bez kategorije';
+		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ul>\n|;
+
+		print $fh li_biblio( $_ ) foreach @biblionumber;
+
+		print $fh qq|</ul>|;
+	}
+
 }
+
+
+mkdir 'html/departments' unless -d 'html/departments';
 
 open(my $dep_fh, '>:encoding(utf-8)', 'html/departments/index.new');
 print $dep_fh html_title('Odsijeci Filozofskog fakulteta u Zagrebu'), qq|<ul>\n|;
@@ -582,47 +607,15 @@ foreach my $department ( sort keys %$department_category_author ) {
 	print $fh html_title($department . ' bibliografija');
 	print $fh qq|<h1>$department bibliografija</h1>\n|;
 
-	print $fh qq|<h2>Primarno autorstvo</h2>\n|;
-
+	my @authids;
 	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
-
-		my @authids = @{ $department_category_author->{$department}->{$category} };
-		next unless @authids;
-
-		my @biblionumber = unique_biblionumber map { @{ $authors->{$_}->{aut}->{$category} } } grep { exists $authors->{$_}->{aut}->{$category} } @authids;
-		my $unique;
-		$unique->{$_}++ foreach @biblionumber;
-
-		next unless @biblionumber;
-
- 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<h3>$label</h3>\n<ul>\n|;
-
-		print $fh li_biblio( $_ ) foreach @biblionumber;
-
-		print $fh qq|</ul>|;
+		push @authids, @{ $department_category_author->{$department}->{$category} };
 	}
+	html_year_selection $fh => @authids;
 
+	department_html( $fh, $department, 'aut', 'Primarno autorstvo' );
 
-	print $fh qq|<h2>Sekundarno autorstvo</h2>\n|;
-
-	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
-
-		my @authids = @{ $department_category_author->{$department}->{$category} };
-		next unless @authids;
-
-		my @biblionumber = unique_biblionumber map { @{ $authors->{$_}->{sec}->{$category} } } grep { exists $authors->{$_}->{sec}->{$category} } @authids;
-
-		next unless @biblionumber;
-
- 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<h3>$label</h3>\n<ul>\n|;
-
-		print $fh li_biblio( $_ ) foreach @biblionumber;
-
-		print $fh qq|</ul>|;
-	}
-
+	department_html( $fh, $department, 'sec', 'Sekundarno autorstvo' );
 
 	print $fh html_end;
 	close($fh);
