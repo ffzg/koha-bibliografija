@@ -804,6 +804,26 @@
             </xsl:if>
         </xsl:for-each>
     </xsl:if>
+    
+    <xsl:if test="marc:datafield[@tag=024]">
+        <xsl:for-each select="marc:datafield[@tag=024]">
+	<a><xsl:attribute name="href">
+            <xsl:if test="marc:subfield[@code='2']">
+	    	<xsl:text>http://dx.doi.org/</xsl:text>
+            </xsl:if>
+            <xsl:if test="marc:subfield[@code='a']">
+            	<xsl:value-of select="marc:subfield[@code='a']"/>
+            </xsl:if>
+	    </xsl:attribute>
+            <xsl:if test="marc:subfield[@code='2']">
+	    	<xsl:text> http://dx.doi.org/</xsl:text>
+            </xsl:if>
+            <xsl:if test="marc:subfield[@code='a']">
+            	<xsl:value-of select="marc:subfield[@code='a']"/>
+            </xsl:if>
+	</a>
+        </xsl:for-each>
+    </xsl:if>
 
 	<xsl:if test="marc:datafield[@tag=856]">
 			<br/>
@@ -840,9 +860,23 @@
 		</span>
 	</xsl:if>
     
+    <xsl:if test="marc:datafield[@tag=962]">
+    	<br/>
+        <xsl:for-each select="marc:datafield[@tag=962]">
+            <xsl:if test="marc:subfield[@code='w']">
+            	<xsl:value-of select="marc:subfield[@code='w']"/>
+            </xsl:if>
+            <xsl:if test="marc:subfield[@code='s']">
+	    	<br/>
+		<xsl:text>Scopus ID:</xsl:text>
+            	<xsl:value-of select="marc:subfield[@code='s']"/>
+            </xsl:if>
+        </xsl:for-each>
+    </xsl:if>
 	<xsl:if test="marc:datafield[@tag=942]">
 		<div class="crosbi">
         <xsl:for-each select="marc:datafield[@tag=942]">
+		<!--
             <xsl:if test="marc:subfield[@code='z']">
 				<xsl:text>Podaci iz CROSBI:</xsl:text>
 				<br/>
@@ -854,6 +888,7 @@
 				<xsl:text>Recenzija: </xsl:text>
             	<xsl:value-of select="marc:subfield[@code='v']"/>
             </xsl:if>
+	    	-->
             <xsl:if test="marc:subfield[@code='r']">
 				<br/>
 				<xsl:text>Bibliografske baze: </xsl:text>
