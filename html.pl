@@ -130,6 +130,7 @@ where
 =cut
 
 my $biblio_year;
+my $biblio_full_name;
 my $type_stats;
 
 my $parser = XML::LibXML->new();
@@ -200,6 +201,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 	my $extract = {
 		'008' => undef,
 		'100' => '(9|a)',
+		'245' => 'a',
 		'680' => 'i',
 		'700' => '(9|4|a)',
 		'942' => '(t|r|v)'
@@ -279,9 +281,12 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 			foreach my $authid ( @first_author ) {
 				push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
 			}
+			$biblio_full_name->{ $row->{biblionumber} } = $data->{100}->[0]->{a};
 	} else {
 		$have_100 = 0;
 	}
+
+	$biblio_full_name->{ $row->{biblionumber} } ||= $data->{245}->[0]->{a};
 
 	my $have_edt;
 
@@ -334,6 +339,7 @@ debug 'authors' => $authors;
 debug 'type_stats' => $type_stats;
 debug 'skip' => $skip;
 debug 'biblio_year' => $biblio_year;
+debug 'biblio_full_name' => $biblio_full_name;
 debug 'biblio_data' => $biblio_data;
 debug 'biblio_author_external' => $biblio_author_external;
 
@@ -389,7 +395,11 @@ sub unique_biblionumber {
 	my @v = @_;
 	my $u;
 	$u->{$_}++ foreach @v;
-	return sort { $biblio_year->{$b} <=> $biblio_year->{$a} || $a <=> $b } keys %$u;
+	return sort {
+		$biblio_year->{$b} <=> $biblio_year->{$a} ||
+		$biblio_full_name->{$a} cmp $biblio_full_name->{$b} ||
+		$a <=> $b
+	} keys %$u;
 }
 
 sub author_html {
