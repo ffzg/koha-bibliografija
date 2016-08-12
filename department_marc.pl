@@ -29,26 +29,32 @@ where
 	biblionumber = ?
 });
 
+my $biblio;
 
 foreach ( keys %$auth_department ) {
 	next unless m/psiho/;
-	my $marc_file = "/dev/shm/$_.mrac";
-	warn "# $marc_file\n";
-
-	open(my $marc_fh, '>', $marc_file);
 
 	foreach my $auth ( @{ $auth_department->{$_} } ) {
 		foreach my $l1 ( keys %{ $authors->{$auth} } ) {
 			foreach my $l2 ( keys %{ $authors->{$auth}->{$l1} } ) {
 				foreach my $biblionumber ( @{ $authors->{$auth}->{$l1}->{$l2} } ) {
-					$sth_marc->execute($biblionumber);
-					my ( $marc ) = $sth_marc->fetchrow_array;
-					print $marc_fh $marc;
+					$biblio->{$biblionumber}++;
+
 				}
 			}
 		}
 	}
 
+	my $marc_file = "/dev/shm/$_.marc";
+	warn "# $marc_file\n";
+
+	open(my $marc_fh, '>', $marc_file);
+
+	foreach my $biblionumber ( sort keys %$biblio ) {
+		$sth_marc->execute($biblionumber);
+		my ( $marc ) = $sth_marc->fetchrow_array;
+		print $marc_fh $marc;
+	}
 
 	close($marc_fh);
 
