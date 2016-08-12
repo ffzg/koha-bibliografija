@@ -14,6 +14,7 @@ use Carp qw(confess);
 use utf8;
 use JSON;
 use POSIX qw(strftime);
+use Storable;
 
 use lib '/srv/koha_ffzg';
 use C4::Context;
@@ -103,6 +104,7 @@ foreach my $department ( keys %$department_in_sum ) {
 }
 
 debug 'auth_department' => $auth_department;
+store $auth_department, '/dev/shm/auth_department.storable';
 debug 'auth_group' => $auth_group;
 debug 'department_in_sum' => $department_in_sum;
 
@@ -336,6 +338,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 }
 
 debug 'authors' => $authors;
+store $authors, '/dev/shm/authors.storable';
 debug 'type_stats' => $type_stats;
 debug 'skip' => $skip;
 debug 'biblio_year' => $biblio_year;
