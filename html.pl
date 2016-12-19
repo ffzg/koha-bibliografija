@@ -547,7 +547,7 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	html_year_selection $fh => $row->{authid};
 
 	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
-	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, krička izdanja' );
+	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, kritička izdanja' );
 
 	print $fh html_end;
 	close($fh);
@@ -610,7 +610,7 @@ sub department_html {
 mkdir 'html/departments' unless -d 'html/departments';
 
 open(my $dep_fh, '>:encoding(utf-8)', 'html/departments/index.new');
-print $dep_fh html_title('Odsijeci Filozofskog fakulteta u Zagrebu'), qq|<ul>\n|;
+print $dep_fh html_title('Odsjeci Filozofskog fakulteta u Zagrebu'), qq|<ul>\n|;
 foreach my $department ( sort keys %$department_category_author ) {
 	my $dep = $department || 'Nema odsjeka';
 	my $dep_file = unac_string('utf-8',$dep);
