@@ -414,11 +414,11 @@ sub author_html {
 
 	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ul>\n|;
+		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ol>\n|;
 		foreach my $biblionumber ( unique_biblionumber @{ $authors->{$authid}->{$type}->{$category} } ) {
 			print $fh li_biblio( $biblionumber );
 		}
-		print $fh qq|</ul>\n|;
+		print $fh qq|</ol>\n|;
 	}
 }
 
@@ -597,11 +597,11 @@ sub department_html {
 		next unless @biblionumber;
 
  		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ul>\n|;
+		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ol>\n|;
 
 		print $fh li_biblio( $_ ) foreach @biblionumber;
 
-		print $fh qq|</ul>|;
+		print $fh qq|</ol>|;
 	}
 
 }
