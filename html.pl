@@ -311,23 +311,32 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 				$type_stats->{$type}++;
 
-				if ( $type =~ m/(edt|trl|com|ctb)/ ) {
-					push @{ $authors->{$authid}->{sec}->{ $category } }, $row->{biblionumber};
-					push @{ $authors->{$authid}->{$1}->{ $category } }, $row->{biblionumber};
-				} elsif ( $type =~ m/aut/ ) {
-					if ( ! $have_100 ) {
-						$have_edt = grep { exists $_->{4} && $_->{4} =~ m/edt/ } @{ $data->{700} } if ! defined $have_edt;
-						if ( $have_edt ) {
-							$skip->{ have_700_edt }->{ $row->{biblionumber} }++;
+				my @types = split(/\s+/, $type);
+
+				foreach my $type ( @types ) {
+					$type_stats->{_count_each_type}->{$type}++;
+
+					if ( $type =~ m/(edt|trl|com|ctb)/ ) {
+						push @{ $authors->{$authid}->{sec}->{ $category } }, $row->{biblionumber};
+						push @{ $authors->{$authid}->{$type}->{ $category } }, $row->{biblionumber};
+						$type =~ s/(com|ctb)/_ostalo/;
+						push @{ $authors->{$authid}->{$type}->{ $category } }, $row->{biblionumber};
+
+					} elsif ( $type =~ m/aut/ ) {
+						if ( ! $have_100 ) {
+							$have_edt = grep { exists $_->{4} && $_->{4} =~ m/edt/ } @{ $data->{700} } if ! defined $have_edt;
+							if ( $have_edt ) {
+								$skip->{ have_700_edt }->{ $row->{biblionumber} }++;
+							} else {
+								push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
+							}
 						} else {
 							push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
 						}
 					} else {
-						push @{ $authors->{$authid}->{aut}->{ $category } }, $row->{biblionumber};
+#						warn "# SKIP ", $row->{biblionumber}, ' no 700$4 in ', dump($data);
+						$skip->{ 'no_700$4' }->{ $row->{biblionumber} }++;
 					}
-				} else {
-#					warn "# SKIP ", $row->{biblionumber}, ' no 700$4 in ', dump($data);
-					$skip->{ 'no_700$4' }->{ $row->{biblionumber} }++;
 				}
 			}
 			delete $data->{700};
@@ -547,7 +556,10 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 	html_year_selection $fh => $row->{authid};
 
 	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
-	author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, kritička izdanja' );
+	#author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, kritička izdanja' );
+	author_html( $fh, $row->{authid}, 'edt' => 'Uredništva' );
+	author_html( $fh, $row->{authid}, 'trl' => 'Prijevodi' );
+	author_html( $fh, $row->{authid}, '_ostalo' => 'Ostalo' );
 
 	print $fh html_end;
 	close($fh);
@@ -628,7 +640,10 @@ foreach my $department ( sort keys %$department_category_author ) {
 
 	department_html( $fh, $department, 'aut', 'Primarno autorstvo' );
 
-	department_html( $fh, $department, 'sec', 'Sekundarno autorstvo' );
+#	department_html( $fh, $department, 'sec', 'Sekundarno autorstvo' );
+	department_html( $fh, $department, 'edt', 'Uredništva' );
+	department_html( $fh, $department, 'trl', 'Prijevodi' );
+	department_html( $fh, $department, '_ostalo', 'Ostalo' );
 
 	print $fh html_end;
 	close($fh);
