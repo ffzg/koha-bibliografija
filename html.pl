@@ -419,7 +419,7 @@ sub author_html {
 
 	return unless exists $authors->{$authid}->{$type};
 
-	print $fh qq|<h2>$label</h2>\n|;
+	print $fh qq|<a name="$type"><h2>$label</h2></a>\n|;
 
 	foreach my $category ( sort keys %{ $authors->{$authid}->{$type} } ) {
 		my $label = $category_label->{$category} || 'Bez kategorije';
@@ -445,6 +445,13 @@ sub count_author_years {
 	return $years;
 }
 
+my @toc_type_label = (
+'aut' => 'Primarno autorstvo',
+'edt' => 'Uredništva',
+'trl' => 'Prijevodi',
+'_ostalo' => 'Ostalo',
+);
+
 sub html_year_selection {
 	my $fh = shift;
 	my @authids = @_;
@@ -461,6 +468,9 @@ sub html_year_selection {
 		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked="checked">$year</label>&nbsp;\n|;
 		foreach my $type_cat ( keys %{ $years->{$year} } ) {
 			$type_cat_count->{ $type_cat } += $years->{$year}->{$type_cat};
+			my ($type,$cat) = split(/-/, $type_cat);
+			$type_cat_count->{_toc}->{$type}->{$cat}++;
+			$type_cat_count->{_toc_count}->{$type} += $years->{$year}->{$type_cat};
 		}
 	}
 
@@ -486,6 +496,7 @@ function year_show(year) {
 			$('a[name="'+type_cat+'"]').show();
 			console.debug(type_cat, 'show');
 		}
+		$('#toc-count-'+type_cat.replace('.','-')).text( type_cat_count[ type_cat ] );
 	}
 }
 
@@ -497,6 +508,7 @@ function year_hide(year) {
 			$('a[name="'+type_cat+'"]').hide();
 			console.debug(type_cat, 'hide');
 		}
+		$('#toc-count-'+type_cat.replace('.','-')).text( type_cat_count[ type_cat ] );
 	}
 }
 
@@ -535,8 +547,30 @@ $(document).ready( function() {
 
 });
 </script>
+
 	|;
+
+	# TOC
+	print $fh qq|<ul id="toc">\n|;
+	my $i = 0;
+	while ( $i < $#toc_type_label ) {
+		my $type  = $toc_type_label[$i++] || die "type";
+		my $label = $toc_type_label[$i++] || die "label";
+		next unless exists $type_cat_count->{_toc}->{$type};
+		print $fh qq| <li id="toc-$type"><a href="#$type">$label</a> <tt id="toc-count-$type">$type_cat_count->{_toc_count}->{$type}</tt></li>\n <ul>\n|;
+		foreach my $category ( sort keys %{ $type_cat_count->{_toc}->{$type} } ) {
+			my $label = $category_label->{$category} || 'Bez kategorije';
+			my $count = $type_cat_count->{ $type . '-' . $category };
+			my $cat_html = $category;
+			$cat_html =~ s/\./-/g;
+			print $fh qq|  <li id="toc-$category"><a href="#$type-$category">$label</a> <tt id="toc-count-$type-$cat_html">$count</tt></li>\n|;
+		}
+		print $fh qq| </ul>\n|;
+	}
+	print $fh qq|</ul>\n|;
+
 }
+
 
 foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
@@ -555,11 +589,12 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
 	html_year_selection $fh => $row->{authid};
 
-	author_html( $fh, $row->{authid}, 'aut' => 'Primarno autorstvo' );
-	#author_html( $fh, $row->{authid}, 'sec' => 'Uredništva, prijevodi, kritička izdanja' );
-	author_html( $fh, $row->{authid}, 'edt' => 'Uredništva' );
-	author_html( $fh, $row->{authid}, 'trl' => 'Prijevodi' );
-	author_html( $fh, $row->{authid}, '_ostalo' => 'Ostalo' );
+	my $i = 0;
+	while ( $i < $#toc_type_label ) {
+		my $type  = $toc_type_label[$i++] || die "type";
+		my $label = $toc_type_label[$i++] || die "label";
+		author_html( $fh, $row->{authid}, $type => $label );
+	}
 
 	print $fh html_end;
 	close($fh);
@@ -597,7 +632,7 @@ debug 'department_category_author' => $department_category_author;
 sub department_html {
 	my ( $fh, $department, $type, $label ) = @_;
 
-	print $fh qq|<h2>$label</h2>\n|;
+	print $fh qq|<a name="$type"><h2>$label</h2></a>\n|;
 
 	foreach my $category ( sort keys %{ $department_category_author->{$department} } ) {
 
