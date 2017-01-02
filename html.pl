@@ -488,6 +488,22 @@ var years = |, encode_json($years), q|;
 
 var type_cat_count = |, encode_json($type_cat_count), q|;
 
+function toc_count_update(type_cat) {
+	var selector = '#toc-count-'+type_cat.replace(/\./g,'-');
+	var e = $(selector);
+	if ( ! e )  {
+		console.error(selector, 'not found');
+		return;
+	}
+	var old_val = e.text();
+	var new_val = type_cat_count[type_cat];
+
+	if ( old_val != new_val ) {
+		e.text(new_val);
+		console.debug( selector, 'old', old_val, 'new', new_val);
+	}
+}
+
 function year_show(year) {
 	$('.y'+year).show();
 	console.debug('show', year);
@@ -496,7 +512,7 @@ function year_show(year) {
 			$('a[name="'+type_cat+'"]').show();
 			console.debug(type_cat, 'show');
 		}
-		$('#toc-count-'+type_cat.replace('.','-')).text( type_cat_count[ type_cat ] );
+		toc_count_update(type_cat);
 	}
 }
 
@@ -508,7 +524,7 @@ function year_hide(year) {
 			$('a[name="'+type_cat+'"]').hide();
 			console.debug(type_cat, 'hide');
 		}
-		$('#toc-count-'+type_cat.replace('.','-')).text( type_cat_count[ type_cat ] );
+		toc_count_update(type_cat);
 	}
 }
 
@@ -557,13 +573,13 @@ $(document).ready( function() {
 		my $type  = $toc_type_label[$i++] || die "type";
 		my $label = $toc_type_label[$i++] || die "label";
 		next unless exists $type_cat_count->{_toc}->{$type};
-		print $fh qq| <li id="toc-$type"><a href="#$type">$label</a> <tt id="toc-count-$type">$type_cat_count->{_toc_count}->{$type}</tt></li>\n <ul>\n|;
+		print $fh qq| <li class="toc" id="toc-$type"><a href="#$type">$label</a> <tt id="toc-count-$type">$type_cat_count->{_toc_count}->{$type}</tt></li>\n <ul>\n|;
 		foreach my $category ( sort keys %{ $type_cat_count->{_toc}->{$type} } ) {
 			my $label = $category_label->{$category} || 'Bez kategorije';
 			my $count = $type_cat_count->{ $type . '-' . $category };
 			my $cat_html = $category;
 			$cat_html =~ s/\./-/g;
-			print $fh qq|  <li id="toc-$category"><a href="#$type-$category">$label</a> <tt id="toc-count-$type-$cat_html">$count</tt></li>\n|;
+			print $fh qq|  <li class="toc" id="toc-$category"><a href="#$type-$category">$label</a> <tt id="toc-count-$type-$cat_html">$count</tt></li>\n|;
 		}
 		print $fh qq| </ul>\n|;
 	}

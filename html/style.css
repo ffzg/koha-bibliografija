@@ -15,6 +15,10 @@ li {
 	margin-top: 10px;
 }
 
+li.toc {
+	margin-top: 0px;
+}
+
 li a {
 	color: #707070;
 }
