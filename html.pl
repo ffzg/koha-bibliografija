@@ -311,13 +311,14 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 
 				$type_stats->{$type}++;
 
-				my @types = split(/\s+/, $type);
+				my @types = split(/[\s\/]+/, $type);
 
 				foreach my $type ( @types ) {
+					my $type = substr($type,0,3);
 					$type_stats->{_count_each_type}->{$type}++;
 
 					if ( $type =~ m/(edt|trl|com|ctb)/ ) {
-						push @{ $authors->{$authid}->{sec}->{ $category } }, $row->{biblionumber};
+						push @{ $authors->{$authid}->{_sec}->{ $category } }, $row->{biblionumber};
 						push @{ $authors->{$authid}->{$type}->{ $category } }, $row->{biblionumber};
 						$type =~ s/(com|ctb)/_ostalo/;
 						push @{ $authors->{$authid}->{$type}->{ $category } }, $row->{biblionumber};
@@ -438,6 +439,7 @@ sub count_author_years {
 	my ($authid) = @_;
 	foreach my $type ( keys %{ $authors->{$authid} } ) {
 		foreach my $category ( keys %{ $authors->{$authid}->{$type} } ) {
+			next if $category =~ m/^_/;
 			foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
 				$years->{ $biblio_year->{ $biblionumber } }->{ $type . '-' . $category }++;
 			}
@@ -556,7 +558,7 @@ my $department_category_author;
 foreach my $department ( sort keys %$auth_department ) {
 	foreach my $authid ( sort @{ $auth_department->{$department} } ) {
 		my   @categories = keys %{ $authors->{$authid}->{aut} };
-		push @categories,  keys %{ $authors->{$authid}->{sec} };
+		push @categories,  keys %{ $authors->{$authid}->{_sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
 			push @{ $department_category_author->{'AAA_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
@@ -616,12 +618,12 @@ foreach my $department ( sort keys %$department_category_author ) {
 	}
 	html_year_selection $fh => @authids;
 
-	department_html( $fh, $department, 'aut', 'Primarno autorstvo' );
-
-#	department_html( $fh, $department, 'sec', 'Sekundarno autorstvo' );
-	department_html( $fh, $department, 'edt', 'Uredništva' );
-	department_html( $fh, $department, 'trl', 'Prijevodi' );
-	department_html( $fh, $department, '_ostalo', 'Ostalo' );
+	my $i = 0;
+	while ( $i < $#toc_type_label ) {
+		my $type  = $toc_type_label[$i++] || die "type";
+		my $label = $toc_type_label[$i++] || die "label";
+		department_html( $fh, $department, $type, $label );
+	}
 
 	print $fh html_end;
 	close($fh);
