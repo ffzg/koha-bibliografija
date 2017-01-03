@@ -21,6 +21,20 @@ use C4::Context;
 use XML::LibXML;
 use XML::LibXSLT;
 
+my $pid_file = '/dev/shm/bibliografija.pid';
+{
+	if ( -e $pid_file ) {
+		open(my $fh, '<', $pid_file);
+		my $pid = <$fh>;
+		no autodie; # it will die on kill
+		kill 0, $pid || die "$0 allready running as pid $pid";
+	}
+	open(my $fh, '>', $pid_file);
+	print $fh $$;
+	close($fh);
+}
+
+
 my $dbh = C4::Context->dbh;
 
 sub debug {
@@ -805,4 +819,6 @@ close($fh);
 close($fh2);
 rename 'html/azvo.new', 'html/azvo.html';
 rename 'html/azvo2.new', 'html/azvo2.html';
+
+unlink $pid_file;
 
