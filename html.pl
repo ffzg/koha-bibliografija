@@ -405,15 +405,19 @@ sub li_biblio {
 		qq|</li>\n|;
 }
 
+sub unique {
+	my $unique;
+	$unique->{$_}++ foreach @_;
+	return keys %$unique;
+}
+
 sub unique_biblionumber {
-	my @v = @_;
-	my $u;
-	$u->{$_}++ foreach @v;
+	my @v = unique @_;
 	return sort {
 		$biblio_year->{$b} <=> $biblio_year->{$a} ||
 		$biblio_full_name->{$a} cmp $biblio_full_name->{$b} ||
 		$a <=> $b
-	} keys %$u;
+	} @v;
 }
 
 sub author_html {
@@ -457,7 +461,7 @@ sub count_author_years {
 
 sub html_year_selection {
 	my $fh = shift;
-	my @authids = @_;
+	my @authids = unique @_;
 
 	debug 'html_year_selection authids=', [ @authids ];
 
@@ -708,12 +712,9 @@ sub table_count {
 	my $label = shift @_;
 	my $department = shift @_;
 	my $group = shift @_;
-	my @biblionumbers = @_;
-	my $unique;
-	$unique->{$_}++ foreach @biblionumbers;
-	my @bibs = keys %$unique;
-	$table->{ffzg}->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar @bibs;
-	$table->{external}->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar grep { $biblio_author_external->{$_} } @bibs;
+	my @biblionumbers = unique @_;
+	$table->{ffzg}->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar @biblionumbers;
+	$table->{external}->{$group}->[ $label2row->{ $label } ]->[ $department2col->{$department} ] = scalar grep { $biblio_author_external->{$_} } @biblionumbers;
 }
 
 foreach my $group ( '', keys %$azvo_group_title ) {
