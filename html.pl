@@ -318,7 +318,7 @@ while( my $row = $sth_select_authors->fetchrow_hashref ) {
 					$type_stats->{_count_each_type}->{$type}++;
 
 					if ( $type =~ m/(edt|trl|com|ctb)/ ) {
-						push @{ $authors->{$authid}->{_sec}->{ $category } }, $row->{biblionumber};
+						push @{ $authors->{$authid}->{__sec}->{ $category } }, $row->{biblionumber};
 						push @{ $authors->{$authid}->{$type}->{ $category } }, $row->{biblionumber};
 						$type =~ s/(com|ctb)/_ostalo/;
 						push @{ $authors->{$authid}->{$type}->{ $category } }, $row->{biblionumber};
@@ -433,21 +433,6 @@ sub author_html {
 	}
 }
 
-
-sub count_author_years {
-	my $years = shift;
-	my ($authid) = @_;
-	foreach my $type ( keys %{ $authors->{$authid} } ) {
-		foreach my $category ( keys %{ $authors->{$authid}->{$type} } ) {
-			next if $category =~ m/^_/;
-			foreach my $biblionumber ( @{ $authors->{$authid}->{$type}->{$category} } ) {
-				$years->{ $biblio_year->{ $biblionumber } }->{ $type . '-' . $category }++;
-			}
-		}
-	}
-	return $years;
-}
-
 my @toc_type_label = (
 'aut' => 'Primarno autorstvo',
 'edt' => 'Uredništva',
@@ -455,9 +440,26 @@ my @toc_type_label = (
 '_ostalo' => 'Ostalo',
 );
 
+
+sub count_author_years {
+	my $years = shift;
+	my ($authid) = @_;
+	foreach my $type ( keys %{ $authors->{$authid} } ) {
+		next if $type =~ m/^_/;
+		foreach my $category ( keys %{ $authors->{$authid}->{$type} } ) {
+			foreach my $biblionumber ( unique_biblionumber @{ $authors->{$authid}->{$type}->{$category} } ) {
+				$years->{ $biblio_year->{ $biblionumber } }->{ $type . '-' . $category }++;
+			}
+		}
+	}
+	return $years;
+}
+
 sub html_year_selection {
 	my $fh = shift;
 	my @authids = @_;
+
+	debug 'html_year_selection authids=', [ @authids ];
 
 	print $fh qq|<span id="years">Godine:\n|;
 	my $type_cat_count = {};
@@ -466,6 +468,8 @@ sub html_year_selection {
 	foreach my $authid ( @authids ) {
 		$years = count_author_years( $years, $authid );
 	}
+
+	debug 'years' => $years;
 
 	foreach my $year ( sort { $b <=> $a } keys %$years ) {
 		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked="checked">$year</label>&nbsp;\n|;
@@ -494,6 +498,8 @@ var type_cat_count = |, encode_json($type_cat_count), q|;
 </script>
 
 	|;
+
+	debug 'type_cat_count' => $type_cat_count;
 
 	# TOC
 	print $fh qq|<ul id="toc">\n|;
@@ -558,7 +564,7 @@ my $department_category_author;
 foreach my $department ( sort keys %$auth_department ) {
 	foreach my $authid ( sort @{ $auth_department->{$department} } ) {
 		my   @categories = keys %{ $authors->{$authid}->{aut} };
-		push @categories,  keys %{ $authors->{$authid}->{_sec} };
+		push @categories,  keys %{ $authors->{$authid}->{__sec} };
 		foreach my $category ( sort @categories ) {
 			push @{ $department_category_author->{$department}->{$category} }, $authid;
 			push @{ $department_category_author->{'AAA_ukupno'}->{$category} }, $authid if $department_in_sum->{$department};
