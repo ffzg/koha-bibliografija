@@ -6,8 +6,8 @@ function toc_count_update(type_cat) {
 		console.error(selector, 'not found');
 		return;
 	}
-	var old_val = e.text();
-	var new_val = type_cat_count[type_cat];
+	var old_val = parseInt( e.text() );
+	var new_val = parseInt( type_cat_count[type_cat] );
 
 	if ( old_val != new_val ) {
 		e.text(new_val);
@@ -25,7 +25,8 @@ function year_show(year) {
 	$('.y'+year).show();
 	console.debug('show', year);
 	for(var type_cat in years[year]) {
-		if ( ( type_cat_count[ type_cat ] += years[year][type_cat] ) == years[year][type_cat]) {
+//console.log('year_show', type_cat, type_cat_count[ type_cat ], years[year][type_cat] );
+		if ( ( type_cat_count[ type_cat ] += parseInt(years[year][type_cat]) ) > 0 ) {
 			$('a[name="'+type_cat+'"]').show();
 			console.debug(type_cat, 'show');
 		}
@@ -37,7 +38,8 @@ function year_hide(year) {
 	$('.y'+year).hide();
 	console.debug('hide', year);
 	for(var type_cat in years[year]) {
-		if ( ( type_cat_count[ type_cat ] -= years[year][type_cat] ) == 0 ) {
+//console.log('year_hide', type_cat, type_cat_count[ type_cat ], years[year][type_cat] );
+		if ( ( type_cat_count[ type_cat ] -= parseInt(years[year][type_cat]) ) == 0 ) {
 			$('a[name="'+type_cat+'"]').hide();
 			console.debug(type_cat, 'hide');
 		}

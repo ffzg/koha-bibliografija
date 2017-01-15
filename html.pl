@@ -466,7 +466,7 @@ sub count_author_years {
 #		next if $type =~ m/^_/; # FIXME
 		foreach my $category ( keys %{ $authors->{$authid}->{$type} } ) {
 			foreach my $biblionumber ( unique_biblionumber @{ $authors->{$authid}->{$type}->{$category} } ) {
-				push @{ $years->{ $biblio_year->{ $biblionumber } }->{ $type . '-' . $category } }, $biblionumber;
+				$years->{ $biblio_year->{ $biblionumber } }->{ $type . '-' . $category }->{ $biblionumber }++;
 			}
 		}
 	}
@@ -492,7 +492,8 @@ sub html_year_selection {
 	foreach my $year ( sort { $b <=> $a } keys %$years ) {
 		print $fh qq|<label><input name="year_selection" value="$year" type=checkbox onClick="toggle_year($year, this)" checked="checked">$year</label>&nbsp;\n|;
 		foreach my $type_cat ( keys %{ $years->{$year} } ) {
-			my $count = scalar unique @{ $years->{$year}->{$type_cat} };
+			my $count = scalar keys %{ $years->{$year}->{$type_cat} };
+			$years->{$year}->{$type_cat} = $count; # remove biblionumbers and use count
 			$type_cat_count->{ $type_cat } += $count;
 			my ($type,$cat) = split(/-/, $type_cat);
 			$type_cat_count->{_toc}->{$type}->{$cat}++;
