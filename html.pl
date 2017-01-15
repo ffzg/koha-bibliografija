@@ -114,7 +114,7 @@ while( my $row = $sth_auth->fetchrow_hashref ) {
 debug 'department_in_group' => $department_in_group;
 
 foreach my $department ( keys %$department_in_sum ) {
-	$department_in_sum->{$department} = 0 unless $department =~ m/(centar|croaticum|katedra|odsjek)/i;
+#	$department_in_sum->{$department} = 0 unless $department =~ m/(centar|croaticum|katedra|odsjek)/i;
 }
 
 debug 'auth_department' => $auth_department;
