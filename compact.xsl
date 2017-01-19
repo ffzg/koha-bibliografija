@@ -290,7 +290,7 @@
         </xsl:if>
 
 		<br/>
-		<hr/>
+		<a name="col-1"/>
         <xsl:call-template name="showAuthor100">
 			<xsl:with-param name="authorfield100" select="marc:datafield[@tag=100]"/>
 		</xsl:call-template>
@@ -307,7 +307,7 @@
 		</xsl:otherwise>
 		</xsl:choose>
 		<br/>
-		<hr/>
+		<a name="col-2"/>
 		<span class="results_summary">
         <xsl:if test="marc:datafield[@tag=245]">
 		<span class="title">
@@ -357,6 +357,7 @@
 		</span>
         </xsl:if>
 	</span>
+	<a name="col-3"/>
 
     <!-- Author Statement: Alternate Graphic Representation (MARC 880) -->
     <xsl:if test="$display880">
@@ -765,7 +766,6 @@
     </xsl:for-each>
     </span>
     </xsl:if>
-
     <xsl:if test="marc:datafield[@tag=773]">
         <xsl:for-each select="marc:datafield[@tag=773]">
             <xsl:if test="marc:subfield[@code='n']">
@@ -823,7 +823,7 @@
 
 	<xsl:if test="marc:datafield[@tag=856]">
 			<br/>
-			<hr/>
+			<a name="col-4"/>
          <span class="results_summary">
                             <xsl:for-each select="marc:datafield[@tag=856]">
                             <xsl:variable name="SubqText"><xsl:value-of select="marc:subfield[@code='q']"/></xsl:variable>
