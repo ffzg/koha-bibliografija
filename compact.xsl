@@ -290,6 +290,7 @@
         </xsl:if>
 
 		<br/>
+		<hr/>
         <xsl:call-template name="showAuthor100">
 			<xsl:with-param name="authorfield100" select="marc:datafield[@tag=100]"/>
 		</xsl:call-template>
@@ -305,7 +306,8 @@
 				</xsl:call-template>
 		</xsl:otherwise>
 		</xsl:choose>
-		<br/>	
+		<br/>
+		<hr/>
 		<span class="results_summary">
         <xsl:if test="marc:datafield[@tag=245]">
 		<span class="title">
@@ -373,7 +375,6 @@
         <xsl:with-param name="label">Publisher: </xsl:with-param>
       </xsl:call-template>
     </xsl:if>
-
     <xsl:if test="marc:datafield[@tag=250]">
     <span class="results_summary edition">
             <xsl:for-each select="marc:datafield[@tag=250]">
@@ -384,7 +385,6 @@
             <xsl:text> - </xsl:text>
     </span>
     </xsl:if>
-
     <xsl:if test="marc:datafield[@tag=260]">
         <span class="results_summary publisher">
             <xsl:for-each select="marc:datafield[@tag=260]">
@@ -411,7 +411,6 @@
             </xsl:for-each>
         </span>
     </xsl:if>
-
     <xsl:if test="marc:datafield[@tag=300] and marc:datafield[@tag=942]/marc:subfield[@code='c'] ='KNJ'">
     <span class="results_summary description"><span class="label">. - </span>
         <xsl:for-each select="marc:datafield[@tag=300]">
@@ -426,7 +425,6 @@
         </xsl:for-each>
     </span>
    </xsl:if>
-
 <xsl:if test="$DisplayIconsXSLT!='0'">
     <span class="results_summary">
     <xsl:if test="$typeOf008!=''">
@@ -750,7 +748,6 @@
 <xsl:text> </xsl:text> <!-- added blank space to fix font display problem, see Bug 3671 -->
 	</span>
 </xsl:if> <!-- DisplayIconsXSLT -->
-
     <xsl:if test="marc:datafield[@tag=020] and marc:datafield[@tag=942]/marc:subfield[@code='c'] ='KNJ'">
     <span class="results_summary isbn"><span class="label"> ISBN: </span>
     <xsl:for-each select="marc:datafield[@tag=020]">
@@ -760,7 +757,6 @@
     </xsl:for-each>
     </span>
     </xsl:if>
-
     <xsl:if test="marc:datafield[@tag=022] and (marc:datafield[@tag=942]/marc:subfield[@code='c'] ='KNJ' or marc:datafield[@tag=942]/marc:subfield[@code='c'] ='PER')">
     <span class="results_summary issn"><span class="label"> ISSN: </span>
     <xsl:for-each select="marc:datafield[@tag=022]">
@@ -827,6 +823,7 @@
 
 	<xsl:if test="marc:datafield[@tag=856]">
 			<br/>
+			<hr/>
          <span class="results_summary">
                             <xsl:for-each select="marc:datafield[@tag=856]">
                             <xsl:variable name="SubqText"><xsl:value-of select="marc:subfield[@code='q']"/></xsl:variable>
@@ -1052,7 +1049,6 @@
         </span>
         </xsl:if>
     </xsl:template>
-    
 	<xsl:template name="showAuthor700">
 	<xsl:param name="authorfield700"/>
 	<xsl:if test="count($authorfield700)&gt;0">
@@ -1077,7 +1073,6 @@
         </span>
         </xsl:if>
     </xsl:template>
-	
 	<xsl:template name="showAuthor700k">
 	<xsl:param name="authorfield700k"/>
 	<xsl:if test="count($authorfield700k)&gt;0">

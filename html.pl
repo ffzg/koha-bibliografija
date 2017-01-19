@@ -601,7 +601,7 @@ debug 'department_category_author' => $department_category_author;
 
 
 sub department_html {
-	my ( $fh, $department, $type, $label ) = @_;
+	my ( $fh, $department, $type, $label, $csv_fh ) = @_;
 
 	print $fh qq|<a name="$type"><h2>$label</h2></a>\n|;
 
@@ -614,10 +614,24 @@ sub department_html {
 
 		next unless @biblionumber;
 
- 		my $label = $category_label->{$category} || 'Bez kategorije';
-		print $fh qq|<a name="$type-$category"><h3>$label</h3></a>\n<ol>\n|;
+ 		my $cat_label = $category_label->{$category} || 'Bez kategorije';
+		print $fh qq|<a name="$type-$category"><h3>$cat_label</h3></a>\n<ol>\n|;
 
-		print $fh li_biblio( $_ ) foreach @biblionumber;
+		foreach my $bib_num ( @biblionumber ) {
+			my @li = li_biblio( $bib_num );
+			my $li_html = join('', @li);
+			$li_html =~ s{<hr/?>}{}g;
+			print $fh $li_html;
+
+			next unless $csv_fh;
+
+			my $year = $li[1];
+			my $html = $li[4];
+			$html =~ s{<hr/?>}{\t}gs;
+#			$html =~ s{</?[^>]*>}{}gs;
+			$html =~ s{\s+$}{}gs;
+			print $csv_fh "$bib_num\t$year\t$type\t$label\t$category\t$cat_label\t$html\n";
+		}
 
 		print $fh qq|</ol>|;
 	}
@@ -644,16 +658,24 @@ foreach my $department ( sort keys %$department_category_author ) {
 	}
 	html_year_selection $fh => @authids;
 
+	my $csv_fh;
+	if ( $department eq 'AAA_ukupno' ) {
+		open($csv_fh, '>:encoding(utf-8)', "html/departments/$department.csv");
+	}
+
 	my $i = 0;
 	while ( $i < $#toc_type_label ) {
 		my $type  = $toc_type_label[$i++] || die "type";
 		my $label = $toc_type_label[$i++] || die "label";
-		department_html( $fh, $department, $type, $label );
+		department_html( $fh, $department, $type, $label, $csv_fh );
 	}
+
+	close($csv_fh) if $csv_fh;
 
 	print $fh html_end;
 	close($fh);
 	rename "html/departments/$dep_file.new", "html/departments/$dep_file.html";
+
 }
 print $dep_fh qq|</ul>\n|, html_end;
 close($dep_fh);
