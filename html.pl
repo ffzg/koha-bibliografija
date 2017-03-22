@@ -629,6 +629,7 @@ sub department_html {
 			my @html;
 			foreach ( split(/<a name="col-/, $li[4]) ) {
 				if ( s{(\d+)"></a>}{} ) {
+					s{\s+}{ }gs;
 					$html[$1] = $_;
 				} else {
 					warn "SKIPPED: Can't find col in [$_] from $li[4]" unless m/^<[^>]+>$/;
