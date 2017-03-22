@@ -620,7 +620,7 @@ sub department_html {
 		foreach my $bib_num ( @biblionumber ) {
 			my @li = li_biblio( $bib_num );
 			my $li_html = join('', @li);
-			$li_html =~ s{<a name="col-\d+"></a>}{}gs;
+			$li_html =~ s{<a name="(col-\d+)"/a>}{<!-- $1 -->}gs;
 			print $fh $li_html;
 
 			next unless $csv_fh;
@@ -628,9 +628,10 @@ sub department_html {
 			my $year = $li[1];
 			my @html;
 			foreach ( split(/<a name="col-/, $li[4]) ) {
-				if ( s{(\d+)"></a>}{} ) {
+				if ( s{^(\d+)"></a>}{} ) {
+					my $nr = $1;
 					s{\s+}{ }gs;
-					$html[$1] = $_;
+					$html[$nr] = $_;
 				} else {
 					warn "SKIPPED: Can't find col in [$_] from $li[4]" unless m/^<[^>]+>$/;
 				}
