@@ -128,10 +128,11 @@ my $marcxml;
 
 my $sth_select_authors  = $dbh->prepare(q{
 select
-	biblionumber,
+	biblioitems.biblionumber,
 	itemtype,
-	marcxml
+	metadata as marcxml
 from biblioitems
+join biblio_metadata on (biblio_metadata.biblionumber = biblioitems.biblionumber)
 where
 	agerestriction > 0
 });
