@@ -803,6 +803,7 @@
     
     <xsl:if test="marc:datafield[@tag=024]">
         <xsl:for-each select="marc:datafield[@tag=024]">
+	<a name="col-4"/>
 	<a><xsl:attribute name="href">
             <xsl:if test="marc:subfield[@code='2']">
 	    	<xsl:text>http://dx.doi.org/</xsl:text>
@@ -823,7 +824,7 @@
 
 	<xsl:if test="marc:datafield[@tag=856]">
 			<br/>
-			<a name="col-4"/>
+			<a name="col-5"/>
          <span class="results_summary">
                             <xsl:for-each select="marc:datafield[@tag=856]">
                             <xsl:variable name="SubqText"><xsl:value-of select="marc:subfield[@code='q']"/></xsl:variable>
