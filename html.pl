@@ -870,7 +870,7 @@ foreach my $department ( @departments ) {
 
   			foreach my $authid ( @{ $auth_department->{$department} } ) {
 				next unless exists $authors->{$authid}->{$type}->{$category};
-				my @biblionumbers = @{ $authors->{$authid}->{$type}->{$category} };
+				my @biblionumbers = grep { $biblio_year->{$_} >= 2012 } @{ $authors->{$authid}->{$type}->{$category} };
 
 				$dep_au_count->{ $department }->{ $authid }->{ $label } += scalar @biblionumbers;
 			}
