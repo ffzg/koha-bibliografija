@@ -543,6 +543,7 @@ var type_cat_count = |, encode_json($type_cat_count), q|;
 
 }
 
+my $authid_fullname;
 
 foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 
@@ -553,6 +554,8 @@ foreach my $row ( sort { $a->{full_name} cmp $b->{full_name} } @authors ) {
 		print $index qq{<h1>$first</h1>\n<ul>\n};
 	}
 	print $index qq{<li><a href="}, $row->{authid}, qq{.html">}, $row->{full_name}, "</a></li>\n";
+
+	$authid_fullname->{ $row->{authid} } = $row->{full_name};
 
 	my $path = "html/$row->{authid}";
 	open(my $fh, '>:encoding(utf-8)', "$path.new");
@@ -580,6 +583,7 @@ rename 'html/index.new', 'html/index.html';
 
 debug 'auth_header' => $auth_header;
 
+debug 'authid_fullname' => $authid_fullname;
 
 my $department_category_author;
 foreach my $department ( sort keys %$auth_department ) {
@@ -724,7 +728,7 @@ my @report_labels;
 
 my $label;
 my $sub_labels;
-open(my $report, '<:encoding(utf-8)', 'AZVO.txt');
+open(my $report, '<:encoding(utf-8)', 'nAZVO.txt');
 while( <$report> ) {
 	chomp;
 	if ( /^([^\t]+)\t+(.+)/ ) {
@@ -812,7 +816,7 @@ foreach my $department ( @departments ) {
 
 } # group
 
-debug 'table', $table;
+#debug 'table', $table;
 
 open(my $fh, '>:encoding(utf-8)', 'html/azvo.new');
 open(my $fh2, '>:encoding(utf-8)', 'html/azvo2.new');
@@ -854,6 +858,64 @@ close($fh);
 close($fh2);
 rename 'html/azvo.new', 'html/azvo.html';
 rename 'html/azvo2.new', 'html/azvo2.html';
+
+my $dep_au_count;
+
+foreach my $department ( @departments ) {
+	foreach my $line ( @report_lines ) {
+		my $label = $line->[0];
+		my @biblionumbers;
+		foreach ( 1 .. $#$line ) {
+			my ( $category, $type ) = @{ $line->[ $_ ] };
+
+  			foreach my $authid ( @{ $auth_department->{$department} } ) {
+				next unless exists $authors->{$authid}->{$type}->{$category};
+				my @biblionumbers = @{ $authors->{$authid}->{$type}->{$category} };
+
+				$dep_au_count->{ $department }->{ $authid }->{ $label } += scalar @biblionumbers;
+			}
+		}
+	}
+}
+
+debug 'dep_au_count', $dep_au_count;
+
+mkdir 'html/dep_au' unless -d 'html/dep_au';
+open(my $dep_fh, '>', 'html/dep_au/index.new');
+print $dep_fh html_title('Odsjeci Filozofskog fakulteta u Zagrebu'), qq|<ul>\n|;
+foreach my $department ( sort keys %{ $dep_au_count } ) {
+
+	my $dep = $department || 'Nema odsjeka';
+	my $dep_file = unac_string('utf-8',$dep);
+	print $dep_fh qq|<li><a href="$dep_file.html">$dep</a></li>\n|;
+	open(my $fh, '>:encoding(utf-8)', "html/dep_au/$dep_file.new");
+
+	print $fh html_title($department . ' bibliografija tablica');
+	
+	# FIXME table
+	print $fh qq|<table>\n<tr><th></th><th>|
+		, join('</th><th>', @report_labels )
+		, qq|</th></tr>\n|
+		;
+
+	foreach my $authid ( keys %{ $dep_au_count->{ $department } } ) {
+		print $fh qq|<tr><th>$authid_fullname->{$authid}</th><th>|
+				, join('</th><th>', map { $dep_au_count->{$department}->{$authid}->{$_} || '-' } @report_labels )
+				, qq|</th></tr>\n|
+				;
+	}
+
+
+	print $fh qq|</table>\n|;
+
+	print $fh html_end;
+	close($fh);
+	rename "html/dep_au/$dep_file.new", "html/dep_au/$dep_file.html";
+}
+
+print $dep_fh html_end;
+close($dep_fh);
+rename "html/dep_au/index.new", "html/dep_au/index.html";
 
 unlink $pid_file;
 
