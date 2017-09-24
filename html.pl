@@ -898,7 +898,7 @@ foreach my $department ( sort keys %{ $dep_au_count } ) {
 		, qq|</th></tr>\n|
 		;
 
-	foreach my $authid ( keys %{ $dep_au_count->{ $department } } ) {
+	foreach my $authid ( sort { $authid_fullname->{$a} cmp $authid_fullname->{$b} } keys %{ $dep_au_count->{ $department } } ) {
 		print $fh qq|<tr><th>$authid_fullname->{$authid}</th><th>|
 				, join('</th><th>', map { $dep_au_count->{$department}->{$authid}->{$_} || '-' } @report_labels )
 				, qq|</th></tr>\n|
