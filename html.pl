@@ -725,6 +725,7 @@ debug 'azvo_stat_biblio' => $azvo_stat_biblio;
 
 my @report_lines;
 my @report_labels;
+my @report_labels_no_sub;
 
 my $label;
 my $sub_labels;
@@ -734,6 +735,7 @@ while( <$report> ) {
 	if ( /^([^\t]+)\t+(.+)/ ) {
 		$label = $1;
 		push @report_labels, $label;
+		push @report_labels_no_sub, $label;
 		my $type = [ map { m/\s+/ ? [ split(/\s+/,$_) ] : [ $_, 'aut' ] } split (/\s*\+\s*/, $2) ];
 		push @report_lines, [ $label, @$type ];
 	} elsif ( /^\t+([^\t]+):\t+(\d+)(\w*)\t*(.*)$/ ) {
@@ -741,6 +743,7 @@ while( <$report> ) {
 		my $sub_label = $1;
 		pop (@report_labels) if ( $report_labels[ $#report_labels ] =~ m/^$label$/ ); # remove partial name
 		push @report_labels, $label . $sub_label;
+		pop @report_labels_no_sub;
 	} else {
 		die "ERROR: [$_]\n";
 	}
@@ -880,6 +883,8 @@ foreach my $department ( @departments ) {
 
 debug 'dep_au_count', $dep_au_count;
 
+debug 'report_labels_no_sub', \@report_labels_no_sub;
+
 mkdir 'html/dep_au' unless -d 'html/dep_au';
 open(my $dep_fh, '>', 'html/dep_au/index.new');
 print $dep_fh html_title('Odsjeci Filozofskog fakulteta u Zagrebu'), qq|<ul>\n|;
@@ -894,13 +899,13 @@ foreach my $department ( sort keys %{ $dep_au_count } ) {
 	
 	# FIXME table
 	print $fh qq|<table>\n<tr><th></th><th>|
-		, join('</th><th>', @report_labels )
+		, join('</th><th>', @report_labels_no_sub )
 		, qq|</th></tr>\n|
 		;
 
 	foreach my $authid ( sort { $authid_fullname->{$a} cmp $authid_fullname->{$b} } keys %{ $dep_au_count->{ $department } } ) {
 		print $fh qq|<tr><th>$authid_fullname->{$authid}</th><th>|
-				, join('</th><th>', map { $dep_au_count->{$department}->{$authid}->{$_} || '-' } @report_labels )
+				, join('</th><th>', map { $dep_au_count->{$department}->{$authid}->{$_} || '-' } @report_labels_no_sub )
 				, qq|</th></tr>\n|
 				;
 	}
